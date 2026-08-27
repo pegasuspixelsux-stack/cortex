@@ -108,6 +108,12 @@ service cloud.firestore {
       }
     }
 
+    // ---- site settings (public logo, etc.) -----------------------
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isEditorOrAdmin();
+    }
+
     // ---- everything else: explicit deny ---------------------------
     match /{document=**} {
       allow read, write: if false;

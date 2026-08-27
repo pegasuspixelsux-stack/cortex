@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SiteLogo from "@/components/SiteLogo";
 import {
   Camera,
   Briefcase,
@@ -41,23 +42,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           {/* Marca */}
           <div className="flex flex-col gap-4">
-            <Link href="/" className="flex items-center gap-2.5 w-fit">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-terracotta-dark"
-              >
-                <rect x="2" y="2" width="8" height="8" fill="currentColor" />
-                <rect x="14" y="2" width="8" height="8" fill="currentColor" />
-                <rect x="2" y="14" width="8" height="8" fill="currentColor" />
-                <rect x="14" y="14" width="8" height="8" fill="currentColor" />
-              </svg>
-              <span className="text-cream text-lg font-light tracking-wide">
-                Cortex
-              </span>
+            <Link href="/" className="w-fit">
+              <SiteLogo variant="footer" />
             </Link>
             <p className="text-cream-soft text-sm leading-relaxed max-w-xs">
               Agencia inmobiliaria de lujo especializada en propiedades de

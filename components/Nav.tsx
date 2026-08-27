@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import SiteLogo from "@/components/SiteLogo";
 
 interface NavItem {
   label: string;
@@ -46,23 +47,8 @@ export default function Nav({
     >
       <div className="flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className={isOverlay ? "text-white" : "text-terracotta"}
-          >
-            <rect x="2" y="2" width="8" height="8" fill="currentColor" />
-            <rect x="14" y="2" width="8" height="8" fill="currentColor" />
-            <rect x="2" y="14" width="8" height="8" fill="currentColor" />
-            <rect x="14" y="14" width="8" height="8" fill="currentColor" />
-          </svg>
-          <span className={`text-lg font-light tracking-wide ${textColor}`}>
-            Cortex
-          </span>
+        <Link href="/">
+          <SiteLogo variant={isOverlay ? "overlay" : "solid"} />
         </Link>
 
         {/* Center Navigation (desktop) */}
