@@ -58,3 +58,25 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Agente widget — per-step entrance */
+@keyframes agente-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.agente-step-in {
+  animation: agente-step-in 0.24s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agente-step-in {
+    animation: none;
+  }
+}

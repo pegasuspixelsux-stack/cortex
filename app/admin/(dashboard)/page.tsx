@@ -8,6 +8,7 @@ import {
   deleteProperty,
   type AdminProperty,
 } from "@/lib/admin/properties";
+import { listLeads } from "@/lib/admin/leads";
 
 const priceFormatter = new Intl.NumberFormat("es-UY", {
   maximumFractionDigits: 0,
@@ -21,6 +22,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-UY", {
 
 export default function AdminDashboardPage() {
   const [properties, setProperties] = useState<AdminProperty[]>([]);
+  const [newLeads, setNewLeads] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -30,6 +32,12 @@ export default function AdminDashboardPage() {
       setProperties(await listProperties());
     } finally {
       setLoading(false);
+    }
+    try {
+      const leads = await listLeads();
+      setNewLeads(leads.filter((l) => l.status === "nuevo").length);
+    } catch {
+      setNewLeads(null);
     }
   }
 
@@ -49,14 +57,26 @@ export default function AdminDashboardPage() {
 
   const latest = properties.slice(0, 5);
 
-  const kpis = [
+  const kpis: Array<{
+    label: string;
+    value: string;
+    icon: typeof Building2;
+    live: boolean;
+    href?: string;
+  }> = [
     {
       label: "Propiedades publicadas",
       value: loading ? "..." : String(properties.length),
       icon: Building2,
       live: true,
     },
-    { label: "Leads / Consultas", value: "--", icon: MessageSquare, live: false },
+    {
+      label: "Leads sin contactar",
+      value: newLeads === null ? "--" : String(newLeads),
+      icon: MessageSquare,
+      live: newLeads !== null,
+      href: "/admin/leads",
+    },
     { label: "Visitas al portal (mes)", value: "--", icon: Eye, live: false },
     { label: "Propiedades destacadas", value: "--", icon: Star, live: false },
   ];
@@ -72,26 +92,40 @@ export default function AdminDashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {kpis.map((kpi) => (
-          <div
-            key={kpi.label}
-            className="flex flex-col gap-4 p-6 border border-foreground/10 rounded-sm"
-          >
-            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-terracotta/10 text-terracotta-hover">
-              <kpi.icon className="w-4 h-4" />
-            </span>
-            <div className="flex flex-col gap-0.5">
-              <span
-                className={`font-serif text-3xl font-light ${
-                  kpi.live ? "text-foreground" : "text-foreground/30"
-                }`}
-              >
-                {kpi.value}
+        {kpis.map((kpi) => {
+          const inner = (
+            <>
+              <span className="flex items-center justify-center w-9 h-9 rounded-full bg-terracotta/10 text-terracotta-hover">
+                <kpi.icon className="w-4 h-4" />
               </span>
-              <span className="text-foreground/45 text-xs">{kpi.label}</span>
+              <div className="flex flex-col gap-0.5">
+                <span
+                  className={`font-serif text-3xl font-light ${
+                    kpi.live ? "text-foreground" : "text-foreground/30"
+                  }`}
+                >
+                  {kpi.value}
+                </span>
+                <span className="text-foreground/45 text-xs">{kpi.label}</span>
+              </div>
+            </>
+          );
+          const cardClass =
+            "flex flex-col gap-4 p-6 border border-foreground/10 rounded-sm transition-colors";
+          return kpi.href ? (
+            <Link
+              key={kpi.label}
+              href={kpi.href}
+              className={`${cardClass} hover:border-terracotta/40`}
+            >
+              {inner}
+            </Link>
+          ) : (
+            <div key={kpi.label} className={cardClass}>
+              {inner}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Latest properties */}

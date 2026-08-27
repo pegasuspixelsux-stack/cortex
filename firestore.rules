@@ -12,6 +12,9 @@ rules_version = '2';
 //                 admin or editor, with light shape validation.
 //   users       — a user may read their own profile; only admins may list
 //                 the directory or create/update/delete profiles.
+//   leads       — created by anonymous visitors via the "Agente" widget
+//                 (shape-validated, server timestamp, status forced to
+//                 "nuevo"); only admin/editor can read or advance them.
 //
 // "Zonas" on the public site are static config (lib/properties.ts:ZONES),
 // not a Firestore collection, so they need no rules here.
@@ -66,6 +69,23 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
       allow create, update, delete: if isAdmin();
+    }
+
+    // ---- leads (public "Agente" widget) ---------------------------
+    function isValidLead(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 120
+        && data.email is string && data.email.matches('.+@.+[.].+')
+        && data.score is number && data.score >= 1 && data.score <= 10
+        && data.status == 'nuevo'
+        && data.createdAt == request.time
+        && data.zones is list
+        && data.obstacles is list;
+    }
+
+    match /leads/{leadId} {
+      allow create: if isValidLead(request.resource.data);
+      allow read, update: if isEditorOrAdmin();
+      allow delete: if isAdmin();
     }
 
     // ---- everything else: explicit deny ---------------------------

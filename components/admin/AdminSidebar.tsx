@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  Inbox,
   ArrowLeft,
   Settings,
   LogOut,
@@ -20,6 +21,7 @@ import { auth } from "@/lib/firebase";
 const TOP_ITEMS = [
   { label: "Panel de Control", href: "/admin", icon: LayoutDashboard },
   { label: "Propiedades", href: "/admin/properties", icon: Building2 },
+  { label: "Leads", href: "/admin/leads", icon: Inbox },
   { label: "Usuarios", href: "/admin/users", icon: Users },
 ];
 
@@ -45,11 +47,7 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-
-  // Close the mobile drawer whenever the route changes.
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  const closeDrawer = () => setOpen(false);
 
   // While the drawer is open on mobile, lock body scroll and let Escape close it.
   useEffect(() => {
@@ -125,7 +123,11 @@ export default function AdminSidebar() {
       >
         <div className="flex flex-col gap-10">
           <div className="flex items-center justify-between gap-2">
-            <Link href="/admin" className="flex items-center gap-2.5 px-2">
+            <Link
+              href="/admin"
+              onClick={closeDrawer}
+              className="flex items-center gap-2.5 px-2"
+            >
               <BrandMark />
               <span className="text-cream text-base font-light tracking-wide">
                 Cortex{" "}
@@ -146,6 +148,7 @@ export default function AdminSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={closeDrawer}
                 className={linkClass(isActive(item.href))}
               >
                 <item.icon className="w-4 h-4" />
@@ -158,6 +161,7 @@ export default function AdminSidebar() {
         <div className="flex flex-col gap-1 border-t border-white/10 pt-5">
           <Link
             href="/"
+            onClick={closeDrawer}
             className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm text-cream-soft/70 hover:text-cream hover:bg-white/5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -165,6 +169,7 @@ export default function AdminSidebar() {
           </Link>
           <Link
             href="/admin/settings"
+            onClick={closeDrawer}
             className={linkClass(isActive("/admin/settings"))}
           >
             <Settings className="w-4 h-4" />
