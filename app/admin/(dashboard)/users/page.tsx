@@ -77,7 +77,7 @@ export default function AdminUsersPage() {
         </button>
       </div>
 
-      {error && <p className="text-terracotta-dark text-sm">{error}</p>}
+      {error && <p className="text-danger text-sm">{error}</p>}
 
       {loading ? (
         <div className="flex items-center gap-2 text-foreground/40 text-sm py-8">
@@ -126,7 +126,7 @@ export default function AdminUsersPage() {
                     <div className="flex items-center justify-end">
                       <button
                         onClick={() => handleDelete(user.uid)}
-                        className="text-foreground/50 hover:text-terracotta-dark transition-colors"
+                        className="text-foreground/50 hover:text-danger transition-colors"
                         aria-label="Eliminar"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -266,7 +266,7 @@ function AddUserModal({
             </select>
           </div>
 
-          {error && <p className="text-terracotta-dark text-xs">{error}</p>}
+          {error && <p className="text-danger text-xs">{error}</p>}
 
           <button
             type="submit"

@@ -124,7 +124,7 @@ export default function AdminPropertiesPage() {
         </div>
       </div>
 
-      {error && <p className="text-terracotta-dark text-sm">{error}</p>}
+      {error && <p className="text-danger text-sm">{error}</p>}
 
       {loading ? (
         <div className="flex items-center gap-2 text-foreground/40 text-sm py-8">
@@ -205,7 +205,7 @@ export default function AdminPropertiesPage() {
                       <button
                         onClick={() => handleDelete(property.id)}
                         disabled={deletingId === property.id}
-                        className="text-foreground/50 hover:text-terracotta-dark transition-colors disabled:opacity-40"
+                        className="text-foreground/50 hover:text-danger transition-colors disabled:opacity-40"
                         aria-label="Eliminar"
                       >
                         <Trash2 className="w-4 h-4" />

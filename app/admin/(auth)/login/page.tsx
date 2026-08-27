@@ -97,7 +97,7 @@ export default function AdminLoginPage() {
             />
           </div>
 
-          {error && <p className="text-terracotta-dark text-xs">{error}</p>}
+          {error && <p className="text-danger-bright text-xs">{error}</p>}
 
           <motion.button
             type="submit"

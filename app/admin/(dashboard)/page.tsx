@@ -173,7 +173,7 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => handleDelete(property.id)}
                           disabled={deletingId === property.id}
-                          className="text-foreground/50 hover:text-terracotta-dark transition-colors disabled:opacity-40"
+                          className="text-foreground/50 hover:text-danger transition-colors disabled:opacity-40"
                           aria-label="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />

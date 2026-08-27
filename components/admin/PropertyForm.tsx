@@ -222,7 +222,7 @@ export default function PropertyForm({
         />
       </Field>
 
-      {error && <p className="text-terracotta-dark text-sm">{error}</p>}
+      {error && <p className="text-danger text-sm">{error}</p>}
 
       <motion.button
         type="submit"

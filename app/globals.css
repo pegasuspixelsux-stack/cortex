@@ -18,6 +18,11 @@
   --color-terracotta-dark: #0085cc; /* bright-teal-blue-600 */
   --color-terracotta-dark-hover: #33b8ff; /* bright-teal-blue-400 */
 
+  /* Error / destructive actions — stays red; the brand palette has no
+     warm hue, and blue error text reads as info. */
+  --color-danger: #cc1f1f;
+  --color-danger-bright: #f87171; /* for use on the near-black surfaces */
+
   /* Near-black surfaces (footer, About band, Inversiones panels, admin
      sidebar/login) and the light text that sits on them. */
   --color-ink: #0e1016;
@@ -38,6 +43,8 @@
   --color-terracotta-hover: var(--color-terracotta-hover);
   --color-terracotta-dark: var(--color-terracotta-dark);
   --color-terracotta-dark-hover: var(--color-terracotta-dark-hover);
+  --color-danger: var(--color-danger);
+  --color-danger-bright: var(--color-danger-bright);
   --color-ink: var(--color-ink);
   --color-ink-soft: var(--color-ink-soft);
   --color-cream: var(--color-cream);

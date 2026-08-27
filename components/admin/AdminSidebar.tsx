@@ -172,7 +172,7 @@ export default function AdminSidebar() {
           </Link>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm text-cream-soft/70 hover:text-terracotta-dark hover:bg-white/5 transition-colors text-left"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm text-cream-soft/70 hover:text-danger-bright hover:bg-white/5 transition-colors text-left"
           >
             <LogOut className="w-4 h-4" />
             Cerrar sesión
