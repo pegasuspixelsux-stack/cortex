@@ -52,6 +52,8 @@ service cloud.firestore {
         && data.price is number
         && data.zone is string
         && data.type is string
+        && (!('operation' in data) || data.operation in ['Venta', 'Alquiler'])
+        && (!('rentalTerms' in data) || data.rentalTerms is list)
         && data.sqm is number
         && data.beds is number
         && data.images is list

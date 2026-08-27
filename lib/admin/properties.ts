@@ -21,6 +21,32 @@ import { db } from "@/lib/firebase";
 
 export type AdminPropertyStatus = "Publicada" | "Borrador";
 
+export type OperationType = "Venta" | "Alquiler";
+
+export const OPERATION_TYPES: OperationType[] = ["Venta", "Alquiler"];
+
+/** Rental sub-terms — shown only when operation is "Alquiler". */
+export type RentalTerm =
+  | "1era Quincena de Diciembre"
+  | "2da Quincena de Diciembre"
+  | "1era Quincena de Enero"
+  | "2da Quincena de Enero"
+  | "1era Quincena de Febrero"
+  | "2da Quincena de Febrero"
+  | "Por Mes"
+  | "Alquiler Anual";
+
+export const RENTAL_TERMS: RentalTerm[] = [
+  "1era Quincena de Diciembre",
+  "2da Quincena de Diciembre",
+  "1era Quincena de Enero",
+  "2da Quincena de Enero",
+  "1era Quincena de Febrero",
+  "2da Quincena de Febrero",
+  "Por Mes",
+  "Alquiler Anual",
+];
+
 export interface AdminProperty {
   id: string;
   title: string;
@@ -28,6 +54,9 @@ export interface AdminProperty {
   price: number;
   zone: string;
   type: string;
+  operation: OperationType;
+  /** Empty unless operation === "Alquiler". */
+  rentalTerms: RentalTerm[];
   sqm: number;
   beds: number;
   images: string[];

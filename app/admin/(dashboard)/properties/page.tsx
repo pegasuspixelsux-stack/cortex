@@ -196,7 +196,17 @@ export default function AdminPropertiesPage() {
                   key={property.id}
                   className="border-b border-foreground/5 last:border-b-0 hover:bg-foreground/[0.02]"
                 >
-                  <td className="px-5 py-4 text-foreground">{property.title}</td>
+                  <td className="px-5 py-4 text-foreground">
+                    {property.title}
+                    <span className="ml-2 align-middle text-[11px] text-foreground/40">
+                      {property.operation ?? "Venta"}
+                      {property.operation === "Alquiler" &&
+                        (property.rentalTerms?.length ?? 0) > 0 &&
+                        ` · ${property.rentalTerms.length} período${
+                          property.rentalTerms.length > 1 ? "s" : ""
+                        }`}
+                    </span>
+                  </td>
                   <td className="px-5 py-4 text-foreground/60">{property.zone}</td>
                   <td className="px-5 py-4 text-foreground/60">
                     USD {priceFormatter.format(property.price)}

@@ -30,6 +30,7 @@ import {
   FPS,
   LINE_IDS,
   LINE_LABEL,
+  REEL_CONTENT_TYPES,
   TRANSITIONS,
   TRANSITION_LABEL,
   reelDuration,
@@ -39,6 +40,7 @@ import {
   type LogoConfig,
   type OverlayConfig,
   type PropertyReelProps,
+  type ReelContentType,
   type TextLine,
 } from "@/remotion/constants";
 import { PRESETS, applyPreset } from "@/remotion/presets";
@@ -92,14 +94,26 @@ export default function AdminContentPage() {
   function loadProperty(id: string) {
     const p = properties.find((x) => x.id === id);
     if (!p) return;
+    const rental = p.operation === "Alquiler";
+    const terms = p.rentalTerms ?? [];
+    const cta = reel.lines.find((l) => l.id === "cta")?.text ?? "";
+    const custom = reel.lines.find((l) => l.id === "custom")?.text ?? "";
     const text: Record<LineId, string> = {
       zone: p.zone,
       title: p.title,
-      price: `USD ${priceFmt.format(p.price)}`,
-      cta: reel.lines.find((l) => l.id === "cta")?.text ?? DEFAULT_REEL_PROPS.lines[3].text,
+      price: rental
+        ? `USD ${priceFmt.format(p.price)}${terms.includes("Por Mes") || terms.includes("Alquiler Anual") ? " / período" : ""}`
+        : `USD ${priceFmt.format(p.price)}`,
+      custom: rental && !custom
+        ? terms.length > 1
+          ? "Consulte precios por quincena"
+          : (terms[0] ?? "Consultar disponibilidad")
+        : custom,
+      cta,
     };
     setReel((r) => ({
       ...r,
+      contentType: rental ? "Alquiler" : "Venta",
       photos: (p.images ?? []).slice(0, 10),
       lines: r.lines.map((l) => ({ ...l, text: text[l.id] })),
     }));
@@ -281,6 +295,20 @@ export default function AdminContentPage() {
                 </option>
               ))}
             </select>
+          </Group>
+
+          <Group label="Tipo de contenido">
+            <div className="flex gap-2">
+              {REEL_CONTENT_TYPES.map((t) => (
+                <Chip
+                  key={t}
+                  active={reel.contentType === t}
+                  onClick={() => set("contentType", t)}
+                >
+                  {t}
+                </Chip>
+              ))}
+            </div>
           </Group>
 
           <Group label="Preset de estilo">

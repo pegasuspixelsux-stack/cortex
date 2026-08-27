@@ -8,8 +8,12 @@ import { ZONES, PROPERTY_TYPES } from "@/lib/properties";
 import {
   createProperty,
   updateProperty,
+  OPERATION_TYPES,
+  RENTAL_TERMS,
   type AdminPropertyInput,
   type AdminPropertyStatus,
+  type OperationType,
+  type RentalTerm,
 } from "@/lib/admin/properties";
 import PropertyMediaManager from "@/components/admin/PropertyMediaManager";
 
@@ -41,6 +45,18 @@ export default function PropertyForm({
   const [status, setStatus] = useState<AdminPropertyStatus>(
     initialValues?.status ?? "Publicada",
   );
+  const [operation, setOperation] = useState<OperationType>(
+    initialValues?.operation ?? "Venta",
+  );
+  const [rentalTerms, setRentalTerms] = useState<RentalTerm[]>(
+    initialValues?.rentalTerms ?? [],
+  );
+
+  function toggleTerm(term: RentalTerm) {
+    setRentalTerms((prev) =>
+      prev.includes(term) ? prev.filter((t) => t !== term) : [...prev, term],
+    );
+  }
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +71,8 @@ export default function PropertyForm({
       price: Number(price) || 0,
       zone,
       type,
+      operation,
+      rentalTerms: operation === "Alquiler" ? rentalTerms : [],
       sqm: Number(sqm) || 0,
       beds: Number(beds) || 0,
       images,
@@ -128,6 +146,48 @@ export default function PropertyForm({
             ))}
           </select>
         </Field>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <Field label="Operación">
+          <select
+            value={operation}
+            onChange={(e) => setOperation(e.target.value as OperationType)}
+            className={inputClass}
+          >
+            {OPERATION_TYPES.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {operation === "Alquiler" && (
+          <div className="flex flex-col gap-2">
+            <span className="text-xs uppercase tracking-[0.12em] text-foreground/40">
+              Períodos de alquiler
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {RENTAL_TERMS.map((term) => {
+                const on = rentalTerms.includes(term);
+                return (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => toggleTerm(term)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      on
+                        ? "bg-terracotta text-white border-terracotta"
+                        : "border-foreground/15 text-foreground/60 hover:border-terracotta/60"
+                    }`}
+                  >
+                    {term}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

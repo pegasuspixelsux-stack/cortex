@@ -62,12 +62,16 @@ export interface FilmBurnConfig {
   intensity: number;
 }
 
-export type LineId = "zone" | "title" | "price" | "cta";
-export const LINE_IDS: LineId[] = ["zone", "title", "price", "cta"];
+export type ReelContentType = "Venta" | "Alquiler";
+export const REEL_CONTENT_TYPES: ReelContentType[] = ["Venta", "Alquiler"];
+
+export type LineId = "zone" | "title" | "price" | "custom" | "cta";
+export const LINE_IDS: LineId[] = ["zone", "title", "price", "custom", "cta"];
 export const LINE_LABEL: Record<LineId, string> = {
   zone: "Zona",
   title: "Título",
   price: "Precio",
+  custom: "Línea personalizada",
   cta: "CTA / Contacto",
 };
 
@@ -118,6 +122,7 @@ export interface OverlayConfig {
 
 export interface PropertyReelProps extends Record<string, unknown> {
   aspectRatio: AspectRatioKey;
+  contentType: ReelContentType;
   photos: string[];
   transition: TransitionKind;
   filmBurn: FilmBurnConfig;
@@ -140,9 +145,10 @@ const line = (over: Partial<TextLine> & Pick<TextLine, "id" | "text">): TextLine
 });
 
 export const DEFAULT_LINES: TextLine[] = [
-  line({ id: "zone", text: "José Ignacio, Punta del Este", fontSize: 26, y: 62 }),
-  line({ id: "title", text: "Residencia Océano", fontSize: 62, y: 68 }),
-  line({ id: "price", text: "USD 3.200.000", fontSize: 32, y: 82 }),
+  line({ id: "zone", text: "José Ignacio, Punta del Este", fontSize: 26, y: 60 }),
+  line({ id: "title", text: "Residencia Océano", fontSize: 62, y: 66 }),
+  line({ id: "price", text: "USD 3.200.000", fontSize: 32, y: 80 }),
+  line({ id: "custom", text: "", fontSize: 24, y: 88, color: "rgba(255,255,255,0.9)" }),
   line({ id: "cta", text: "Cortex Real Estate · +598 99 000 000", fontSize: 24, x: 50, y: 66, align: "center" }),
 ];
 
@@ -175,6 +181,7 @@ export const DEFAULT_BOTTOM_OVERLAY: OverlayConfig = {
 
 export const DEFAULT_REEL_PROPS: PropertyReelProps = {
   aspectRatio: "vertical",
+  contentType: "Venta",
   photos: [],
   transition: "crossfade",
   filmBurn: { enabled: false, intensity: 0.5 },

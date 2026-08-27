@@ -10,12 +10,14 @@ import {
   DEFAULT_REEL_PROPS,
   FONT_KEYS,
   LINE_IDS,
+  REEL_CONTENT_TYPES,
   TRANSITIONS,
   type AnimKind,
   type FontKey,
   type LineId,
   type OverlayConfig,
   type PropertyReelProps,
+  type ReelContentType,
   type TextLine,
   type TransitionKind,
 } from "@/remotion/constants";
@@ -85,6 +87,9 @@ function sanitize(raw: unknown): PropertyReelProps {
       p.aspectRatio && p.aspectRatio in ASPECT_RATIOS
         ? p.aspectRatio
         : d.aspectRatio,
+    contentType: REEL_CONTENT_TYPES.includes(p.contentType as ReelContentType)
+      ? (p.contentType as ReelContentType)
+      : d.contentType,
     photos: Array.isArray(p.photos)
       ? p.photos.filter((u): u is string => typeof u === "string").slice(0, 10)
       : [],

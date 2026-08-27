@@ -8,7 +8,25 @@ import {
   createProperty,
   listProperties,
   type AdminPropertyInput,
+  type RentalTerm,
 } from "@/lib/admin/properties";
+
+function operationOf(t: (typeof PROPERTIES)[number]["transactionType"]): {
+  operation: AdminPropertyInput["operation"];
+  rentalTerms: RentalTerm[];
+} {
+  if (t === "Comprar") return { operation: "Venta", rentalTerms: [] };
+  if (t === "Alquiler anual")
+    return { operation: "Alquiler", rentalTerms: ["Alquiler Anual"] };
+  return {
+    operation: "Alquiler",
+    rentalTerms: [
+      "1era Quincena de Enero",
+      "2da Quincena de Enero",
+      "1era Quincena de Febrero",
+    ],
+  };
+}
 
 function describe(p: (typeof PROPERTIES)[number]): string {
   const where = p.locationDetail ? `${p.locationDetail}, ${p.zone}` : p.zone;
@@ -36,6 +54,7 @@ export async function seedSampleProperties(): Promise<{
       price: p.price,
       zone: p.zone,
       type: p.type,
+      ...operationOf(p.transactionType),
       sqm: p.sqm,
       beds: p.beds,
       images: [p.image],

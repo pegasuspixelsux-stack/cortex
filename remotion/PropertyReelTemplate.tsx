@@ -306,15 +306,16 @@ function PhotoScene({
 }
 
 function CtaScene({ reel }: { reel: PropertyReelProps }) {
-  const title = reel.lines.find((l) => l.id === "title");
-  const cta = reel.lines.find((l) => l.id === "cta");
-
+  const shown = reel.lines.filter(
+    (l) => l.id === "title" || l.id === "cta" || l.id === "custom",
+  );
   return (
     <AbsoluteFill style={{ backgroundColor: BRAND.ink }}>
       <OverlayBand overlay={reel.topOverlay} edge="top" />
       <OverlayBand overlay={reel.bottomOverlay} edge="bottom" />
-      {title && <Line line={title} sceneDuration={CTA_DURATION} />}
-      {cta && <Line line={cta} sceneDuration={CTA_DURATION} />}
+      {shown.map((l) => (
+        <Line key={l.id} line={l} sceneDuration={CTA_DURATION} />
+      ))}
       <LogoLayer logo={reel.logo} sceneDuration={CTA_DURATION} />
     </AbsoluteFill>
   );
