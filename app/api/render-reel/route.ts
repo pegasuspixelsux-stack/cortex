@@ -3,11 +3,15 @@ import os from "node:os";
 import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { renderMedia, selectComposition } from "@remotion/renderer";
+import chromium from "@sparticuz/chromium";
 import {
   ASPECT_RATIOS,
   DEFAULT_REEL_PROPS,
   type PropertyReelProps,
 } from "@/remotion/constants";
+
+// The reel has no WebGL — skip the graphics stack to save memory / space.
+chromium.setGraphicsMode = false;
 
 // The renderer downloads a headless browser on the first cold start, then
 // composites the video — give it room.
@@ -66,10 +70,19 @@ export async function POST(req: Request) {
       /* fine on local dev */
     }
 
+    // On Vercel, use the Lambda-compatible Chromium (bundled shared libs).
+    // Locally it throws — fall back to Remotion's own download.
+    let browserExecutable: string | null = null;
+    if (process.env.VERCEL) {
+      browserExecutable = await chromium.executablePath();
+    }
+
     const composition = await selectComposition({
       serveUrl: SERVE_DIR,
       id: "PropertyReel",
       inputProps,
+      browserExecutable: browserExecutable ?? undefined,
+      chromiumOptions: { gl: "angle" },
     });
 
     await renderMedia({
@@ -79,6 +92,9 @@ export async function POST(req: Request) {
       outputLocation: outPath,
       inputProps,
       imageFormat: "jpeg",
+      browserExecutable: browserExecutable ?? undefined,
+      chromiumOptions: { gl: "angle" },
+      concurrency: 1,
     });
 
     const file = await fs.readFile(outPath);
