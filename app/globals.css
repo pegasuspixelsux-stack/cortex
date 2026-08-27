@@ -1,20 +1,30 @@
 @import "tailwindcss";
 
+/*
+ * Brand palette — deep-twilight (primary) + bright-teal-blue (secondary),
+ * from the supplied blue/cyan system. Background stays white and body text
+ * stays near-black/grey; the palette is used only for accents and dark
+ * chrome. Token names are historical (terracotta/cream/navy) but now
+ * resolve to blues — kept stable so components don't need to change.
+ */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #14161c; /* near-black, faint cool cast */
 
-  --color-terracotta: #c2523a;
-  --color-terracotta-hover: #a8442f;
-  --color-terracotta-dark: #d4634b;
-  --color-terracotta-dark-hover: #c05540;
+  /* Primary accent — deep-twilight */
+  --color-terracotta: #0609c6; /* deep-twilight-600 */
+  --color-terracotta-hover: #050794; /* deep-twilight-700 */
+  /* Secondary accent — bright-teal-blue, legible on both white and dark */
+  --color-terracotta-dark: #0085cc; /* bright-teal-blue-600 */
+  --color-terracotta-dark-hover: #33b8ff; /* bright-teal-blue-400 */
 
-  --color-ink: #171310;
-  --color-ink-soft: #221c17;
-  --color-cream: #f4ede4;
-  --color-cream-soft: #c9beb2;
-
-  --color-navy: #0f1e34;
+  /* Near-black surfaces (footer, About band, Inversiones panels, admin
+     sidebar/login) and the light text that sits on them. */
+  --color-ink: #0e1016;
+  --color-ink-soft: #171a22;
+  --color-navy: #080a1c;
+  --color-cream: #f4f6fb;
+  --color-cream-soft: #9aa3b4;
 }
 
 @theme inline {
