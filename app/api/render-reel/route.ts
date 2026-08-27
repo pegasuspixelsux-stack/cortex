@@ -55,7 +55,17 @@ export async function POST(req: Request) {
 
   const outPath = path.join(os.tmpdir(), `cortex-reel-${Date.now()}.mp4`);
 
+  // Vercel's working dir (/var/task) is read-only; Remotion writes its
+  // downloaded browser relative to cwd, so point cwd at the one writable
+  // place. SERVE_DIR is already absolute, so it survives the switch.
+  const originalCwd = process.cwd();
   try {
+    try {
+      process.chdir(os.tmpdir());
+    } catch {
+      /* fine on local dev */
+    }
+
     const composition = await selectComposition({
       serveUrl: SERVE_DIR,
       id: "PropertyReel",
@@ -86,6 +96,11 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   } finally {
+    try {
+      process.chdir(originalCwd);
+    } catch {
+      /* ignore */
+    }
     await fs.unlink(outPath).catch(() => undefined);
   }
 }
