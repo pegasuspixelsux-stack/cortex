@@ -1,0 +1,51 @@
+rules_version = '2';
+
+// Deployed with `firebase deploy --only storage` (config in firebase.json).
+// Same role model as firestore.rules — resolved by reading the caller's
+// users/{uid} doc straight from Firestore.
+//
+//   properties/*, agents/*  — world-readable (image URLs are rendered on
+//                             the public marketing site); uploads/overwrites
+//                             restricted to admin or editor, images only,
+//                             under 5 MB. Deletes: admin or editor.
+//   everything else          — denied.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function roleOf(uid) {
+      return firestore.exists(/databases/(default)/documents/users/$(uid))
+        ? firestore.get(/databases/(default)/documents/users/$(uid)).data.role
+        : null;
+    }
+
+    function myRole() {
+      return request.auth != null ? roleOf(request.auth.uid) : null;
+    }
+
+    function isEditorOrAdmin() {
+      return myRole() == 'admin' || myRole() == 'editor';
+    }
+
+    function isValidImage() {
+      return request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /properties/{fileName} {
+      allow read: if true;
+      allow create, update: if isEditorOrAdmin() && isValidImage();
+      allow delete: if isEditorOrAdmin();
+    }
+
+    match /agents/{fileName} {
+      allow read: if true;
+      allow create, update: if isEditorOrAdmin() && isValidImage();
+      allow delete: if isEditorOrAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
