@@ -123,7 +123,14 @@ export const EMPTY_DRAFT: LeadDraft = {
   phone: "",
 };
 
-export type LeadStatus = "nuevo" | "contactado" | "descartado";
+/** Pipeline stages for the /admin/leads Kanban. */
+export type LeadStage =
+  | "nuevo"
+  | "contactado"
+  | "visita"
+  | "negociacion"
+  | "ganado"
+  | "perdido";
 
 export type ScoreBreakdown = {
   timeframe: number;
@@ -150,7 +157,11 @@ export interface Lead {
   contactWindow: ContactWindow | null;
   score: number;
   scoreBreakdown: ScoreBreakdown;
-  status: LeadStatus;
+  stage: LeadStage;
+  /** Set whenever the stage changes — drives the SLA / staleness alerts. */
+  lastStageChangeAt: Timestamp | null;
+  assignedTo: string | null;
+  assignedToName: string | null;
   createdAt: Timestamp | null;
 }
 
@@ -243,7 +254,10 @@ export async function createLead(draft: LeadDraft): Promise<string> {
     contactWindow: draft.contactWindow ?? null,
     score,
     scoreBreakdown: breakdown,
-    status: "nuevo",
+    stage: "nuevo",
+    lastStageChangeAt: serverTimestamp(),
+    assignedTo: null,
+    assignedToName: null,
     createdAt: serverTimestamp(),
   });
   return ref.id;

@@ -71,13 +71,15 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // ---- leads (public "Agente" widget) ---------------------------
+    // ---- leads (public "Agente" widget + admin CRM) --------------
     function isValidLead(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() < 120
         && data.email is string && data.email.matches('.+@.+[.].+')
         && data.score is number && data.score >= 1 && data.score <= 10
-        && data.status == 'nuevo'
+        && data.stage == 'nuevo'
+        && data.assignedTo == null
         && data.createdAt == request.time
+        && data.lastStageChangeAt == request.time
         && data.zones is list
         && data.obstacles is list;
     }
@@ -86,6 +88,17 @@ service cloud.firestore {
       allow create: if isValidLead(request.resource.data);
       allow read, update: if isEditorOrAdmin();
       allow delete: if isAdmin();
+
+      // Activity log — append-only, author must be the caller.
+      match /notes/{noteId} {
+        allow read: if isEditorOrAdmin();
+        allow create: if isEditorOrAdmin()
+          && request.resource.data.authorUid == request.auth.uid
+          && request.resource.data.body is string
+          && request.resource.data.body.size() > 0
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
     }
 
     // ---- everything else: explicit deny ---------------------------

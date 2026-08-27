@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Remotion's bundler/renderer ship native binaries — keep them out of the
+  // Next build and load them from node_modules at runtime.
+  serverExternalPackages: ["@remotion/bundler", "@remotion/renderer"],
 };
 
 export default nextConfig;

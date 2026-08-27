@@ -8,7 +8,7 @@ import {
   deleteProperty,
   type AdminProperty,
 } from "@/lib/admin/properties";
-import { listLeads } from "@/lib/admin/leads";
+import { subscribeLeads } from "@/lib/admin/leads";
 
 const priceFormatter = new Intl.NumberFormat("es-UY", {
   maximumFractionDigits: 0,
@@ -33,17 +33,19 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-    try {
-      const leads = await listLeads();
-      setNewLeads(leads.filter((l) => l.status === "nuevo").length);
-    } catch {
-      setNewLeads(null);
-    }
   }
 
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(
+    () =>
+      subscribeLeads((leads) =>
+        setNewLeads(leads.filter((l) => l.stage === "nuevo").length),
+      ),
+    [],
+  );
 
   async function handleDelete(id: string) {
     setDeletingId(id);

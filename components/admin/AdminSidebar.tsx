@@ -10,6 +10,7 @@ import {
   Building2,
   Users,
   Inbox,
+  Film,
   ArrowLeft,
   Settings,
   LogOut,
@@ -21,6 +22,7 @@ import { auth } from "@/lib/firebase";
 const TOP_ITEMS = [
   { label: "Panel de Control", href: "/admin", icon: LayoutDashboard },
   { label: "Propiedades", href: "/admin/properties", icon: Building2 },
+  { label: "Contenido", href: "/admin/content", icon: Film },
   { label: "Leads", href: "/admin/leads", icon: Inbox },
   { label: "Usuarios", href: "/admin/users", icon: Users },
 ];

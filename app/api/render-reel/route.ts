@@ -1,0 +1,96 @@
+import path from "node:path";
+import os from "node:os";
+import fs from "node:fs/promises";
+import { bundle } from "@remotion/bundler";
+import { renderMedia, selectComposition } from "@remotion/renderer";
+import {
+  ASPECT_RATIOS,
+  DEFAULT_REEL_PROPS,
+  type PropertyReelProps,
+} from "@/remotion/constants";
+
+// Rendering downloads a headless browser on the first cold start and then
+// composites the video — give it room.
+export const maxDuration = 300;
+
+let bundlePromise: Promise<string> | null = null;
+
+/** Bundle the Remotion project once per warm instance. */
+function getBundle(): Promise<string> {
+  if (!bundlePromise) {
+    bundlePromise = bundle({
+      entryPoint: path.join(process.cwd(), "remotion", "index.ts"),
+      onProgress: () => undefined,
+    });
+  }
+  return bundlePromise;
+}
+
+function sanitize(raw: unknown): PropertyReelProps {
+  const p = (raw ?? {}) as Partial<PropertyReelProps>;
+  const aspectRatio =
+    p.aspectRatio && p.aspectRatio in ASPECT_RATIOS
+      ? p.aspectRatio
+      : DEFAULT_REEL_PROPS.aspectRatio;
+  return {
+    aspectRatio,
+    photos: Array.isArray(p.photos)
+      ? p.photos.filter((u): u is string => typeof u === "string").slice(0, 10)
+      : [],
+    title: String(p.title ?? DEFAULT_REEL_PROPS.title).slice(0, 120),
+    zone: String(p.zone ?? DEFAULT_REEL_PROPS.zone).slice(0, 120),
+    price: String(p.price ?? DEFAULT_REEL_PROPS.price).slice(0, 60),
+    agent: String(p.agent ?? DEFAULT_REEL_PROPS.agent).slice(0, 120),
+    contact: String(p.contact ?? DEFAULT_REEL_PROPS.contact).slice(0, 160),
+    logoUrl:
+      typeof p.logoUrl === "string" && p.logoUrl ? p.logoUrl : undefined,
+  };
+}
+
+export async function POST(req: Request) {
+  const inputProps = sanitize(await req.json().catch(() => ({})));
+
+  if (inputProps.photos.length === 0) {
+    return Response.json(
+      { error: "Agregá al menos una foto para generar el reel." },
+      { status: 400 },
+    );
+  }
+
+  const outPath = path.join(os.tmpdir(), `cortex-reel-${Date.now()}.mp4`);
+
+  try {
+    const serveUrl = await getBundle();
+    const composition = await selectComposition({
+      serveUrl,
+      id: "PropertyReel",
+      inputProps,
+    });
+
+    await renderMedia({
+      composition,
+      serveUrl,
+      codec: "h264",
+      outputLocation: outPath,
+      inputProps,
+      imageFormat: "jpeg",
+    });
+
+    const file = await fs.readFile(outPath);
+    return new Response(new Uint8Array(file), {
+      headers: {
+        "Content-Type": "video/mp4",
+        "Content-Disposition": `attachment; filename="cortex-reel.mp4"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (err) {
+    console.error("[render-reel]", err);
+    return Response.json(
+      { error: "No se pudo renderizar el video." },
+      { status: 500 },
+    );
+  } finally {
+    await fs.unlink(outPath).catch(() => undefined);
+  }
+}
