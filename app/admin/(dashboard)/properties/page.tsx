@@ -20,6 +20,16 @@ const priceFormatter = new Intl.NumberFormat("es-UY", {
   maximumFractionDigits: 0,
 });
 
+/**
+ * Whole days since the property was first created in Firestore. Internal
+ * metric for the team — not surfaced on the public site. Returns null while
+ * the serverTimestamp is still resolving.
+ */
+function daysOnMarket(createdAt: AdminProperty["createdAt"]): number | null {
+  if (!createdAt) return null;
+  return Math.max(0, Math.floor((Date.now() - createdAt.toMillis()) / 86_400_000));
+}
+
 export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,6 +144,12 @@ export default function AdminPropertiesPage() {
                 <th className="px-5 py-3.5 font-medium">Zona</th>
                 <th className="px-5 py-3.5 font-medium">Precio</th>
                 <th className="px-5 py-3.5 font-medium">Estado</th>
+                <th
+                  className="px-5 py-3.5 font-medium"
+                  title="Días desde el alta en Firestore — uso interno"
+                >
+                  Días en mercado
+                </th>
                 <th className="px-5 py-3.5 font-medium text-right">Acciones</th>
               </tr>
             </thead>
@@ -158,6 +174,24 @@ export default function AdminPropertiesPage() {
                     >
                       {property.status}
                     </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    {(() => {
+                      const days = daysOnMarket(property.createdAt);
+                      if (days === null)
+                        return <span className="text-foreground/30">—</span>;
+                      return (
+                        <span
+                          className={
+                            days > 90
+                              ? "text-terracotta-dark"
+                              : "text-foreground/60"
+                          }
+                        >
+                          {days} {days === 1 ? "día" : "días"}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-3">

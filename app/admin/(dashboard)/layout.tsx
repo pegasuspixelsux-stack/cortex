@@ -29,7 +29,7 @@ export default function AdminDashboardLayout({
     return (
       <div className="flex min-h-screen w-full bg-background">
         <AdminSidebar />
-        <main className="flex-1 p-8 md:p-12">
+        <main className="flex-1 min-w-0 px-5 pt-20 pb-12 md:p-12">
           <FirebaseNotice />
         </main>
       </div>
@@ -47,7 +47,7 @@ export default function AdminDashboardLayout({
   return (
     <div className="flex min-h-screen w-full bg-background">
       <AdminSidebar />
-      <main className="flex-1 p-8 md:p-12">{children}</main>
+      <main className="flex-1 min-w-0 px-5 pt-20 pb-12 md:p-12">{children}</main>
     </div>
   );
 }
