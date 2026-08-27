@@ -25,7 +25,7 @@ export default function FeaturedProperties() {
   const spans = page === 1 ? SPANS_PAGE_1 : SPANS_PAGE_2;
 
   return (
-    <section className="w-full bg-background">
+    <section id="propiedades" className="w-full bg-background scroll-mt-24">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-20 md:py-28">
         {/* Section heading */}
         <div className="flex flex-col gap-2 mb-12 md:mb-16">

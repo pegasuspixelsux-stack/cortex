@@ -3,60 +3,13 @@ import Image from "next/image";
 import { Mail, Phone } from "lucide-react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import { TEAM } from "@/lib/team";
 
 export const metadata: Metadata = {
   title: "Nosotros | Cortex",
   description:
     "Conocé al equipo detrás de Cortex: arquitectura, visión y exclusividad en la costa atlántica de Punta del Este.",
 };
-
-interface TeamMember {
-  name: string;
-  role: string;
-  bio: string;
-  email: string;
-  phone: string;
-  image: string;
-}
-
-const TEAM: TeamMember[] = [
-  {
-    name: "Martín Ferreira",
-    role: "Socio Director",
-    bio: "Más de 15 años estructurando operaciones inmobiliarias de alto valor en la costa uruguaya.",
-    email: "martin@cortexrealestate.com",
-    phone: "+598 99 111 222",
-    image:
-      "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Sofía Bianchi",
-    role: "Directora de Ventas",
-    bio: "Especialista en propiedades frente al mar y relación directa con inversores internacionales.",
-    email: "sofia@cortexrealestate.com",
-    phone: "+598 99 222 333",
-    image:
-      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Ignacio Larrañaga",
-    role: "Director de Inversiones",
-    bio: "Análisis financiero y estructuración de oportunidades para carteras patrimoniales.",
-    email: "ignacio@cortexrealestate.com",
-    phone: "+598 99 333 444",
-    image:
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Lucas Méndez",
-    role: "Asesor de Arquitectura",
-    bio: "Curaduría de proyectos de autor y acompañamiento técnico en cada operación.",
-    email: "lucas@cortexrealestate.com",
-    phone: "+598 99 444 555",
-    image:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&q=80&auto=format&fit=crop",
-  },
-];
 
 export default function NosotrosPage() {
   return (

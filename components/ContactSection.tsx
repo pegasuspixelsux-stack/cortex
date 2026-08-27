@@ -55,7 +55,7 @@ export default function ContactSection() {
   }
 
   return (
-    <section className="w-full bg-background">
+    <section id="contacto" className="w-full bg-background scroll-mt-24">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-28">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
           {/* Left column */}

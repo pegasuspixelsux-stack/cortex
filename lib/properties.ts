@@ -81,7 +81,9 @@ export function displayZone(property: Pick<Property, "zone" | "locationDetail">)
 
 // The same 12 verified Unsplash photos are reused cyclically across the
 // extended catalog to keep the mock dataset lightweight.
-const IMAGES = [
+// Exported so property detail pages can build a secondary photo gallery
+// from the same verified pool.
+export const IMAGES = [
   "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1200&q=80&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80&auto=format&fit=crop",
@@ -405,3 +407,30 @@ export const PROPERTIES: Property[] = [
     image: IMAGES[11],
   },
 ];
+
+export function getPropertyById(id: number): Property | undefined {
+  return PROPERTIES.find((property) => property.id === id);
+}
+
+/** Main photo + 3 secondary photos drawn from the shared image pool. */
+export function getPropertyGallery(property: Property): string[] {
+  const secondary = IMAGES.filter((image) => image !== property.image).slice(
+    property.id % (IMAGES.length - 3),
+    property.id % (IMAGES.length - 3) + 3,
+  );
+  return [property.image, ...secondary];
+}
+
+/** Covered area vs. lot size — Terreno listings only have raw land. */
+export function getPropertySpecs(property: Property) {
+  if (property.type === "Terreno") {
+    return { coveredSqm: undefined, lotSqm: property.sqm };
+  }
+  return { coveredSqm: property.sqm, lotSqm: Math.round(property.sqm * 1.6) };
+}
+
+/** Estimated bathroom count — not stored per listing, derived from beds. */
+export function getPropertyBaths(property: Property): number {
+  if (property.beds === 0) return 0;
+  return Math.max(1, Math.round(property.beds * 0.75));
+}

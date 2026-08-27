@@ -2,61 +2,11 @@
 
 import { motion } from "motion/react";
 import Image from "next/image";
-
-interface Area {
-  name: string;
-  description: string;
-  image: string;
-}
-
-const AREAS: Area[] = [
-  {
-    name: "La Barra",
-    description:
-      "Vida social vibrante, playas bravas y una escena gastronómica que no descansa.",
-    image:
-      "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=1200&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Manantiales",
-    description:
-      "Arquitectura contemporánea entre médanos y pinares, a pasos del océano.",
-    image:
-      "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "José Ignacio",
-    description:
-      "Sofisticación rústica, atardeceres oceánicos y exclusividad absoluta.",
-    image:
-      "https://images.unsplash.com/photo-1493558103817-58b2924bce98?w=1200&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Playa Brava",
-    description:
-      "Olas imponentes y horizonte infinito frente a la avenida más icónica de Punta del Este.",
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Playa Mansa",
-    description:
-      "Aguas calmas, atardeceres de bahía y el pulso urbano a un paso de la costa.",
-    image:
-      "https://images.unsplash.com/photo-1520942702018-0862200e6873?w=1200&q=80&auto=format&fit=crop",
-  },
-  {
-    name: "Península",
-    description:
-      "El corazón histórico y cosmopolita de Punta del Este, entre el mar y la bahía.",
-    image:
-      "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=1200&q=80&auto=format&fit=crop",
-  },
-];
+import { ZONES as AREAS } from "@/lib/zones";
 
 export default function AreasSection() {
   return (
-    <section className="w-full bg-background">
+    <section id="zonas" className="w-full bg-background scroll-mt-24">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-24">
         {/* Heading */}
         <motion.div
@@ -109,7 +59,7 @@ export default function AreasSection() {
                   {area.name}
                 </h3>
                 <p className="mt-2 text-cream-soft text-sm leading-relaxed">
-                  {area.description}
+                  {area.tagline}
                 </p>
               </div>
             </motion.div>

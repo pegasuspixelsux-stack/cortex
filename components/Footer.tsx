@@ -1,115 +1,188 @@
 import Link from "next/link";
+import {
+  Camera,
+  Briefcase,
+  Video,
+  MessageCircle,
+  LayoutDashboard,
+} from "lucide-react";
+import { ZONES } from "@/lib/zones";
 
 const QUICK_LINKS = [
-  { label: "Residencias", href: "/propiedades/residencias" },
-  { label: "Penthouses", href: "/propiedades/penthouses" },
-  { label: "Lotes exclusivos", href: "/propiedades/lotes" },
-  { label: "Inversiones comerciales", href: "/inversiones/comercial" },
+  { label: "Propiedades", href: "/#propiedades" },
+  { label: "Colección", href: "/propiedades" },
+  { label: "Inversiones", href: "/inversiones" },
+  { label: "Nosotros", href: "/nosotros" },
+  { label: "Contacto", href: "/#contacto" },
 ];
 
-const DESTINATIONS = [
-  { label: "La Barra", href: "/destinos/la-barra" },
-  { label: "Manantiales", href: "/destinos/manantiales" },
-  { label: "José Ignacio", href: "/destinos/jose-ignacio" },
-  { label: "Peninsula", href: "/destinos/peninsula" },
+const LEGAL_LINKS = [
+  { label: "Política de Privacidad", href: "/privacy" },
+  { label: "Términos de Uso", href: "/terms" },
+  { label: "Política de Cookies", href: "/cookies" },
+];
+
+const SOCIALS = [
+  { label: "Instagram", href: "https://instagram.com", icon: Camera },
+  { label: "LinkedIn", href: "https://linkedin.com", icon: Briefcase },
+  { label: "YouTube", href: "https://youtube.com", icon: Video },
+  {
+    label: "WhatsApp",
+    href: "https://wa.me/59899000000",
+    icon: MessageCircle,
+  },
 ];
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-ink-soft px-6 md:px-12 lg:px-16 py-16 md:py-20">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-        {/* Marca */}
-        <div className="flex flex-col gap-4">
-          <Link href="/" className="flex items-center gap-2.5 w-fit">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="text-terracotta-dark"
+    <footer className="w-full bg-ink-soft">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 pt-20 pb-12">
+        {/* Top grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+          {/* Marca */}
+          <div className="flex flex-col gap-4">
+            <Link href="/" className="flex items-center gap-2.5 w-fit">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-terracotta-dark"
+              >
+                <rect x="2" y="2" width="8" height="8" fill="currentColor" />
+                <rect x="14" y="2" width="8" height="8" fill="currentColor" />
+                <rect x="2" y="14" width="8" height="8" fill="currentColor" />
+                <rect x="14" y="14" width="8" height="8" fill="currentColor" />
+              </svg>
+              <span className="text-cream text-lg font-light tracking-wide">
+                Cortex
+              </span>
+            </Link>
+            <p className="text-cream-soft text-sm leading-relaxed max-w-xs">
+              Agencia inmobiliaria de lujo especializada en propiedades de
+              autor frente al mar en Punta del Este, Uruguay.
+            </p>
+            <p className="text-cream-soft/60 text-xs">
+              Av. Roosevelt, Parada 5 · Punta del Este, Uruguay
+            </p>
+          </div>
+
+          {/* Enlaces rápidos */}
+          <div className="flex flex-col gap-4">
+            <h3 className="text-cream text-sm font-medium tracking-wide">
+              Enlaces rápidos
+            </h3>
+            <ul className="flex flex-col gap-3">
+              {QUICK_LINKS.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className="text-cream-soft text-sm hover:text-terracotta-dark transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Zonas de influencia */}
+          <div className="flex flex-col gap-4">
+            <h3 className="text-cream text-sm font-medium tracking-wide">
+              Zonas de Influencia
+            </h3>
+            <ul className="flex flex-col gap-3">
+              {ZONES.map((zone) => (
+                <li key={zone.name}>
+                  <Link
+                    href="/#zonas"
+                    className="text-cream-soft text-sm hover:text-terracotta-dark transition-colors"
+                  >
+                    {zone.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contacto */}
+          <div className="flex flex-col gap-4">
+            <h3 className="text-cream text-sm font-medium tracking-wide">
+              Contacto
+            </h3>
+            <ul className="flex flex-col gap-3 text-cream-soft text-sm">
+              <li>Av. Roosevelt, Parada 5, Punta del Este, Uruguay</li>
+              <li>
+                <a
+                  href="mailto:contacto@cortexrealestate.com"
+                  className="hover:text-terracotta-dark transition-colors"
+                >
+                  contacto@cortexrealestate.com
+                </a>
+              </li>
+              <li>
+                <a
+                  href="tel:+59842000000"
+                  className="hover:text-terracotta-dark transition-colors"
+                >
+                  +598 42 00 0000
+                </a>
+              </li>
+              <li>
+                <a
+                  href="tel:+59899000000"
+                  className="hover:text-terracotta-dark transition-colors"
+                >
+                  +598 99 000 000 (WhatsApp)
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-white/10 my-12" />
+
+        {/* Bottom bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-white/60">
+          <span>© 2026 Cortex Real Estate. Todos los derechos reservados.</span>
+
+          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            {LEGAL_LINKS.map((item) => (
+              <li key={item.label}>
+                <Link
+                  href={item.href}
+                  className="hover:text-white transition-colors"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center gap-5">
+            {SOCIALS.map((social) => (
+              <a
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.label}
+                className="hover:text-white transition-colors"
+              >
+                <social.icon className="w-4 h-4" />
+              </a>
+            ))}
+            <span className="w-px h-4 bg-white/15" />
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 hover:text-white transition-colors"
             >
-              <rect x="2" y="2" width="8" height="8" fill="currentColor" />
-              <rect x="14" y="2" width="8" height="8" fill="currentColor" />
-              <rect x="2" y="14" width="8" height="8" fill="currentColor" />
-              <rect x="14" y="14" width="8" height="8" fill="currentColor" />
-            </svg>
-            <span className="text-cream text-lg font-light tracking-wide">
-              Cortex
-            </span>
-          </Link>
-          <p className="text-cream-soft text-sm leading-relaxed max-w-xs">
-            Agencia inmobiliaria de lujo especializada en propiedades de autor
-            frente al mar en Punta del Este, Uruguay.
-          </p>
-          <p className="text-cream-soft/60 text-xs mt-2">
-            © {new Date().getFullYear()} Cortex. Todos los derechos
-            reservados.
-          </p>
-        </div>
-
-        {/* Enlaces rápidos */}
-        <div className="flex flex-col gap-4">
-          <h3 className="text-cream text-sm font-medium tracking-wide">
-            Enlaces rápidos
-          </h3>
-          <ul className="flex flex-col gap-3">
-            {QUICK_LINKS.map((item) => (
-              <li key={item.label}>
-                <Link
-                  href={item.href}
-                  className="text-cream-soft text-sm hover:text-terracotta-dark transition-colors"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Punta del Este */}
-        <div className="flex flex-col gap-4">
-          <h3 className="text-cream text-sm font-medium tracking-wide">
-            Punta del Este
-          </h3>
-          <ul className="flex flex-col gap-3">
-            {DESTINATIONS.map((item) => (
-              <li key={item.label}>
-                <Link
-                  href={item.href}
-                  className="text-cream-soft text-sm hover:text-terracotta-dark transition-colors"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Contacto */}
-        <div className="flex flex-col gap-4">
-          <h3 className="text-cream text-sm font-medium tracking-wide">
-            Contacto
-          </h3>
-          <ul className="flex flex-col gap-3 text-cream-soft text-sm">
-            <li>Avenida Roosevelt, Punta del Este, Uruguay</li>
-            <li>
-              <a
-                href="mailto:contacto@cortex.com.uy"
-                className="hover:text-terracotta-dark transition-colors"
-              >
-                contacto@cortex.com.uy
-              </a>
-            </li>
-            <li>
-              <a
-                href="tel:+59842000000"
-                className="hover:text-terracotta-dark transition-colors"
-              >
-                +598 4200 0000
-              </a>
-            </li>
-          </ul>
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              Admin
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
