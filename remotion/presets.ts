@@ -5,22 +5,27 @@
 
 import type {
   AnimKind,
+  FilmBurnConfig,
   FontKey,
   LineId,
   LogoConfig,
   OverlayConfig,
   TextLine,
+  TransitionKind,
 } from "./constants";
 
 type LineStyle = Omit<TextLine, "id" | "text">;
+type LogoStyle = Omit<LogoConfig, "url">;
 
 export interface Preset {
   key: string;
   label: string;
   lines: Record<LineId, LineStyle>;
-  logo: Pick<LogoConfig, "size" | "position" | "opacity" | "enter" | "exit">;
+  logo: LogoStyle;
   topOverlay: OverlayConfig;
   bottomOverlay: OverlayConfig;
+  transition: TransitionKind;
+  filmBurn: FilmBurnConfig;
 }
 
 const s = (
@@ -33,6 +38,16 @@ const s = (
   enter: AnimKind,
   exit: AnimKind,
 ): LineStyle => ({ fontFamily, fontSize, color, x, y, align, enter, exit });
+
+const lg = (
+  size: number,
+  position: LogoStyle["position"],
+  opacity: number,
+  enter: AnimKind,
+  exit: AnimKind,
+): LogoStyle => ({ size, position, opacity, enter, exit, x: 88, y: 8 });
+
+const noBurn: FilmBurnConfig = { enabled: false, intensity: 0.5 };
 
 const off: OverlayConfig = {
   enabled: false,
@@ -53,9 +68,11 @@ export const PRESETS: Preset[] = [
       custom: s("Inter", 22, "rgba(255,255,255,0.75)", 8, 90, "left", "fade-in", "fade-out"),
       cta: s("Inter", 24, "#ffffff", 50, 60, "center", "fade-in", "fade-out"),
     },
-    logo: { size: 32, position: "top-right", opacity: 0.85, enter: "fade", exit: "fade" },
+    logo: lg(32, "top-right", 0.85, "fade", "fade"),
     topOverlay: off,
     bottomOverlay: { enabled: true, kind: "gradient", color: "#060a1c", opacity: 0.55, size: 44 },
+    transition: "crossfade",
+    filmBurn: noBurn,
   },
   {
     key: "cinematic",
@@ -67,9 +84,11 @@ export const PRESETS: Preset[] = [
       custom: s("Cinzel", 20, "#d9b66b", 50, 87, "center", "fade-in", "fade-out"),
       cta: s("Cinzel", 22, "#d9b66b", 50, 68, "center", "fade-in", "fade-out"),
     },
-    logo: { size: 44, position: "top-left", opacity: 0.95, enter: "fade", exit: "fade" },
+    logo: lg(44, "top-left", 0.95, "fade", "fade"),
     topOverlay: { enabled: true, kind: "gradient", color: "#0a0803", opacity: 0.35, size: 24 },
     bottomOverlay: { enabled: true, kind: "gradient", color: "#0a0803", opacity: 0.72, size: 55 },
+    transition: "zoom",
+    filmBurn: { enabled: true, intensity: 0.55 },
   },
   {
     key: "bold",
@@ -81,9 +100,11 @@ export const PRESETS: Preset[] = [
       custom: s("Montserrat", 24, "#33b8ff", 8, 91, "left", "slide-in", "slide-out"),
       cta: s("Montserrat", 26, "#ffffff", 50, 64, "center", "slide-up", "fade-out"),
     },
-    logo: { size: 40, position: "bottom-right", opacity: 1, enter: "slide-in", exit: "fade" },
+    logo: lg(40, "bottom-right", 1, "slide-in", "fade"),
     topOverlay: off,
     bottomOverlay: { enabled: true, kind: "solid", color: "#06070f", opacity: 0.78, size: 40 },
+    transition: "slide-h",
+    filmBurn: noBurn,
   },
   {
     key: "corporate",
@@ -95,9 +116,11 @@ export const PRESETS: Preset[] = [
       custom: s("Roboto", 22, "#4cc2ff", 8, 90, "left", "fade-in", "fade-out"),
       cta: s("Roboto", 24, "#4cc2ff", 50, 66, "center", "fade-in", "fade-out"),
     },
-    logo: { size: 32, position: "top-left", opacity: 1, enter: "fade", exit: "fade" },
+    logo: lg(32, "top-left", 1, "fade", "fade"),
     topOverlay: { enabled: true, kind: "gradient", color: "#0b1020", opacity: 0.25, size: 20 },
     bottomOverlay: { enabled: true, kind: "gradient", color: "#0b1020", opacity: 0.5, size: 40 },
+    transition: "crossfade",
+    filmBurn: noBurn,
   },
   {
     key: "serif",
@@ -109,9 +132,11 @@ export const PRESETS: Preset[] = [
       custom: s("Cinzel", 18, "rgba(255,255,255,0.8)", 50, 86, "center", "fade-in", "fade-out"),
       cta: s("Cinzel", 20, "rgba(255,255,255,0.8)", 50, 71, "center", "fade-in", "fade-out"),
     },
-    logo: { size: 38, position: "top-right", opacity: 0.85, enter: "fade", exit: "fade" },
+    logo: lg(38, "top-right", 0.85, "fade", "fade"),
     topOverlay: off,
     bottomOverlay: { enabled: true, kind: "gradient", color: "#0a0a12", opacity: 0.5, size: 50 },
+    transition: "crossfade",
+    filmBurn: noBurn,
   },
 ];
 

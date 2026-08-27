@@ -43,7 +43,9 @@ import {
   type ReelContentType,
   type TextLine,
 } from "@/remotion/constants";
-import { PRESETS, applyPreset } from "@/remotion/presets";
+import { useAdminAuth } from "@/lib/admin/useAdminAuth";
+import ContentPresetPanel from "@/components/admin/ContentPresetPanel";
+import { applyConfig } from "@/lib/admin/contentPresets";
 
 const priceFmt = new Intl.NumberFormat("es-UY", { maximumFractionDigits: 0 });
 
@@ -53,6 +55,7 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "reel";
 
 export default function AdminContentPage() {
+  const { user } = useAdminAuth();
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [reel, setReel] = useState<PropertyReelProps>(DEFAULT_REEL_PROPS);
   const [rendering, setRendering] = useState(false);
@@ -119,17 +122,6 @@ export default function AdminContentPage() {
     }));
   }
 
-  function usePreset(key: string) {
-    const preset = PRESETS.find((p) => p.key === key);
-    if (!preset) return;
-    setReel((r) => ({
-      ...r,
-      lines: applyPreset(preset, r.lines),
-      logo: { ...r.logo, ...preset.logo },
-      topOverlay: preset.topOverlay,
-      bottomOverlay: preset.bottomOverlay,
-    }));
-  }
 
   async function handleLogoFile(file: File) {
     setUploadingLogo(true);
@@ -311,15 +303,11 @@ export default function AdminContentPage() {
             </div>
           </Group>
 
-          <Group label="Preset de estilo">
-            <div className="flex flex-wrap gap-2">
-              {PRESETS.map((p) => (
-                <Chip key={p.key} onClick={() => usePreset(p.key)}>
-                  {p.label}
-                </Chip>
-              ))}
-            </div>
-          </Group>
+          <ContentPresetPanel
+            reel={reel}
+            uid={user?.uid ?? null}
+            onApply={(config) => setReel((r) => applyConfig(r, config))}
+          />
 
           {LINE_IDS.map((id) => {
             const l = reel.lines.find((x) => x.id === id)!;

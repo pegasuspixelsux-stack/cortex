@@ -71,6 +71,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
       allow create, update, delete: if isAdmin();
+
+      // Each agent's saved reel-styling presets — private to them.
+      match /contentPresets/{presetId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
     }
 
     // ---- leads (public "Agente" widget + admin CRM) --------------
