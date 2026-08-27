@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Player } from "@remotion/player";
 import {
   DndContext,
@@ -17,70 +17,118 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Loader2, Download, GripVertical, Film } from "lucide-react";
+import { Loader2, Download, GripVertical, Film, Upload } from "lucide-react";
 import { listProperties, type AdminProperty } from "@/lib/admin/properties";
+import { uploadImage } from "@/lib/admin/storage";
 import { PropertyReelTemplate } from "@/remotion/PropertyReelTemplate";
+import "@/remotion/fonts";
 import {
+  ANIMATIONS,
   ASPECT_RATIOS,
   DEFAULT_REEL_PROPS,
+  FONT_KEYS,
   FPS,
-  reelDurationInFrames,
+  LINE_IDS,
+  LINE_LABEL,
+  TRANSITIONS,
+  TRANSITION_LABEL,
+  reelDuration,
+  type AnimKind,
   type AspectRatioKey,
+  type LineId,
+  type LogoConfig,
+  type OverlayConfig,
   type PropertyReelProps,
+  type TextLine,
 } from "@/remotion/constants";
+import { PRESETS, applyPreset } from "@/remotion/presets";
 
 const priceFmt = new Intl.NumberFormat("es-UY", { maximumFractionDigits: 0 });
-const fieldClass =
-  "w-full bg-transparent border-b border-foreground/15 focus:border-terracotta outline-none text-foreground placeholder:text-foreground/30 text-sm py-2 transition-colors";
 
 const DIACRITICS = /[̀-ͯ]/g;
 const slug = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(DIACRITICS, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "") || "reel";
+  s.toLowerCase().normalize("NFD").replace(DIACRITICS, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "reel";
 
 export default function AdminContentPage() {
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [reel, setReel] = useState<PropertyReelProps>(DEFAULT_REEL_PROPS);
   const [rendering, setRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInput = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
   useEffect(() => {
-    listProperties()
-      .then(setProperties)
-      .catch(() => setProperties([]));
+    listProperties().then(setProperties).catch(() => setProperties([]));
   }, []);
 
   const ar = ASPECT_RATIOS[reel.aspectRatio];
   const durationInFrames = useMemo(
-    () => reelDurationInFrames(reel.photos.length),
-    [reel.photos.length],
+    () => reelDuration(reel.photos.length, reel.transition),
+    [reel.photos.length, reel.transition],
   );
 
-  function set<K extends keyof PropertyReelProps>(
-    key: K,
-    value: PropertyReelProps[K],
-  ) {
-    setReel((r) => ({ ...r, [key]: value }));
+  /* --- mutations --- */
+  function set<K extends keyof PropertyReelProps>(k: K, v: PropertyReelProps[K]) {
+    setReel((r) => ({ ...r, [k]: v }));
+  }
+  function setLine(id: LineId, patch: Partial<TextLine>) {
+    setReel((r) => ({
+      ...r,
+      lines: r.lines.map((l) => (l.id === id ? { ...l, ...patch } : l)),
+    }));
+  }
+  function setLogo(patch: Partial<LogoConfig>) {
+    setReel((r) => ({ ...r, logo: { ...r.logo, ...patch } }));
+  }
+  function setOverlay(edge: "topOverlay" | "bottomOverlay", patch: Partial<OverlayConfig>) {
+    setReel((r) => ({ ...r, [edge]: { ...r[edge], ...patch } }));
   }
 
   function loadProperty(id: string) {
     const p = properties.find((x) => x.id === id);
     if (!p) return;
+    const text: Record<LineId, string> = {
+      zone: p.zone,
+      title: p.title,
+      price: `USD ${priceFmt.format(p.price)}`,
+      cta: reel.lines.find((l) => l.id === "cta")?.text ?? DEFAULT_REEL_PROPS.lines[3].text,
+    };
     setReel((r) => ({
       ...r,
-      title: p.title,
-      zone: p.zone,
-      price: `USD ${priceFmt.format(p.price)}`,
       photos: (p.images ?? []).slice(0, 10),
+      lines: r.lines.map((l) => ({ ...l, text: text[l.id] })),
     }));
+  }
+
+  function usePreset(key: string) {
+    const preset = PRESETS.find((p) => p.key === key);
+    if (!preset) return;
+    setReel((r) => ({
+      ...r,
+      lines: applyPreset(preset, r.lines),
+      logo: { ...r.logo, ...preset.logo },
+      topOverlay: preset.topOverlay,
+      bottomOverlay: preset.bottomOverlay,
+    }));
+  }
+
+  async function handleLogoFile(file: File) {
+    setUploadingLogo(true);
+    setError(null);
+    try {
+      // Logos keep transparency — upload as-is, no JPEG optimizer.
+      const url = await uploadImage(file, "brand");
+      setLogo({ url });
+    } catch {
+      setError("No se pudo subir el logo.");
+    } finally {
+      setUploadingLogo(false);
+    }
   }
 
   function onDragEnd(e: DragEndEvent) {
@@ -109,7 +157,8 @@ export default function AdminContentPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `cortex-${slug(reel.title)}.mp4`;
+      const title = reel.lines.find((l) => l.id === "title")?.text ?? "reel";
+      a.download = `cortex-${slug(title)}.mp4`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -132,8 +181,8 @@ export default function AdminContentPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-10 items-start">
-        {/* Preview */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-10 items-start">
+        {/* --- preview column --- */}
         <div className="flex flex-col gap-4">
           <div
             className="mx-auto w-full overflow-hidden rounded-sm border border-foreground/10 bg-ink"
@@ -152,34 +201,37 @@ export default function AdminContentPage() {
             />
           </div>
 
-          {/* Aspect ratio */}
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(ASPECT_RATIOS) as AspectRatioKey[]).map((key) => (
-              <button
-                key={key}
-                onClick={() => set("aspectRatio", key)}
-                className={`flex flex-col items-start rounded-sm border px-3.5 py-2 text-left transition-colors ${
-                  reel.aspectRatio === key
-                    ? "border-terracotta bg-terracotta/5"
-                    : "border-foreground/15 hover:border-terracotta/50"
-                }`}
-              >
-                <span className="text-xs text-foreground/80">
-                  {ASPECT_RATIOS[key].label}
-                </span>
-                <span className="text-[11px] text-foreground/40">
-                  {ASPECT_RATIOS[key].width}×{ASPECT_RATIOS[key].height} ·{" "}
-                  {ASPECT_RATIOS[key].platform}
-                </span>
-              </button>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Group label="Formato">
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(ASPECT_RATIOS) as AspectRatioKey[]).map((k) => (
+                  <Chip
+                    key={k}
+                    active={reel.aspectRatio === k}
+                    onClick={() => set("aspectRatio", k)}
+                  >
+                    {ASPECT_RATIOS[k].label}
+                  </Chip>
+                ))}
+              </div>
+            </Group>
+            <Group label="Transición entre fotos">
+              <div className="flex flex-wrap gap-2">
+                {TRANSITIONS.map((t) => (
+                  <Chip
+                    key={t}
+                    active={reel.transition === t}
+                    onClick={() => set("transition", t)}
+                  >
+                    {TRANSITION_LABEL[t]}
+                  </Chip>
+                ))}
+              </div>
+            </Group>
           </div>
 
-          {/* Photo sequence */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs uppercase tracking-[0.12em] text-foreground/40">
-              Secuencia ({reel.photos.length})
-            </span>
+          {/* photo strip */}
+          <Group label={`Secuencia (${reel.photos.length})`}>
             {reel.photos.length === 0 ? (
               <p className="text-sm text-foreground/40">
                 Elegí una propiedad para traer sus fotos.
@@ -196,15 +248,12 @@ export default function AdminContentPage() {
                 >
                   <div className="flex gap-2 overflow-x-auto pb-2">
                     {reel.photos.map((url, i) => (
-                      <ReelThumb
+                      <Thumb
                         key={url}
                         url={url}
                         seq={i + 1}
                         onRemove={() =>
-                          set(
-                            "photos",
-                            reel.photos.filter((u) => u !== url),
-                          )
+                          set("photos", reel.photos.filter((u) => u !== url))
                         }
                       />
                     ))}
@@ -212,16 +261,16 @@ export default function AdminContentPage() {
                 </SortableContext>
               </DndContext>
             )}
-          </div>
+          </Group>
         </div>
 
-        {/* Editor panel */}
-        <div className="flex flex-col gap-5 rounded-sm border border-foreground/10 p-5">
-          <Field label="Propiedad">
+        {/* --- editor panel --- */}
+        <div className="flex flex-col gap-4">
+          <Group label="Propiedad">
             <select
               defaultValue=""
               onChange={(e) => loadProperty(e.target.value)}
-              className={fieldClass}
+              className={field}
             >
               <option value="" disabled>
                 Elegir del catálogo…
@@ -232,51 +281,231 @@ export default function AdminContentPage() {
                 </option>
               ))}
             </select>
-          </Field>
+          </Group>
 
-          <Field label="Título">
-            <input
-              value={reel.title}
-              onChange={(e) => set("title", e.target.value)}
-              className={fieldClass}
+          <Group label="Preset de estilo">
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((p) => (
+                <Chip key={p.key} onClick={() => usePreset(p.key)}>
+                  {p.label}
+                </Chip>
+              ))}
+            </div>
+          </Group>
+
+          {LINE_IDS.map((id) => {
+            const l = reel.lines.find((x) => x.id === id)!;
+            return (
+              <Section key={id} title={LINE_LABEL[id]} defaultOpen={id === "title"}>
+                <input
+                  value={l.text}
+                  onChange={(e) => setLine(id, { text: e.target.value })}
+                  className={field}
+                  placeholder="Texto de la línea"
+                />
+                <Row2>
+                  <Pick
+                    label="Tipografía"
+                    value={l.fontFamily}
+                    options={FONT_KEYS}
+                    onChange={(v) => setLine(id, { fontFamily: v })}
+                  />
+                  <Pick
+                    label="Alineación"
+                    value={l.align}
+                    options={["left", "center", "right"] as const}
+                    onChange={(v) => setLine(id, { align: v })}
+                  />
+                </Row2>
+                <Slider
+                  label="Tamaño"
+                  value={l.fontSize}
+                  min={12}
+                  max={140}
+                  onChange={(v) => setLine(id, { fontSize: v })}
+                />
+                <Row2>
+                  <Slider
+                    label="Posición X"
+                    value={l.x}
+                    min={0}
+                    max={100}
+                    onChange={(v) => setLine(id, { x: v })}
+                  />
+                  <Slider
+                    label="Posición Y"
+                    value={l.y}
+                    min={0}
+                    max={100}
+                    onChange={(v) => setLine(id, { y: v })}
+                  />
+                </Row2>
+                <Row2>
+                  <Pick
+                    label="Entrada"
+                    value={l.enter}
+                    options={ANIMATIONS}
+                    onChange={(v) => setLine(id, { enter: v })}
+                  />
+                  <Pick
+                    label="Salida"
+                    value={l.exit}
+                    options={ANIMATIONS}
+                    onChange={(v) => setLine(id, { exit: v })}
+                  />
+                </Row2>
+                <input
+                  type="color"
+                  value={/^#/.test(l.color) ? l.color : "#ffffff"}
+                  onChange={(e) => setLine(id, { color: e.target.value })}
+                  className="h-8 w-full rounded-sm bg-transparent"
+                />
+              </Section>
+            );
+          })}
+
+          <Section title="Logo">
+            <div className="flex gap-2">
+              <input
+                value={reel.logo.url ?? ""}
+                onChange={(e) => setLogo({ url: e.target.value || undefined })}
+                placeholder="URL, o subí un PNG/SVG"
+                className={field}
+              />
+              <button
+                type="button"
+                onClick={() => logoInput.current?.click()}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-foreground/15 px-3 py-1.5 text-xs text-foreground/70 hover:border-terracotta"
+              >
+                {uploadingLogo ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5" />
+                )}
+              </button>
+              <input
+                ref={logoInput}
+                type="file"
+                accept="image/png,image/svg+xml,image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleLogoFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+            <Slider
+              label="Tamaño"
+              value={reel.logo.size}
+              min={16}
+              max={180}
+              onChange={(v) => setLogo({ size: v })}
             />
-          </Field>
-          <Field label="Zona">
-            <input
-              value={reel.zone}
-              onChange={(e) => set("zone", e.target.value)}
-              className={fieldClass}
+            <Pick
+              label="Posición"
+              value={reel.logo.position}
+              options={
+                ["top-left", "top-right", "bottom-left", "bottom-right", "custom"] as const
+              }
+              onChange={(v) => setLogo({ position: v })}
             />
-          </Field>
-          <Field label="Precio">
-            <input
-              value={reel.price}
-              onChange={(e) => set("price", e.target.value)}
-              className={fieldClass}
+            {reel.logo.position === "custom" && (
+              <Row2>
+                <Slider label="X" value={reel.logo.x} min={0} max={100} onChange={(v) => setLogo({ x: v })} />
+                <Slider label="Y" value={reel.logo.y} min={0} max={100} onChange={(v) => setLogo({ y: v })} />
+              </Row2>
+            )}
+            <Slider
+              label="Opacidad"
+              value={Math.round(reel.logo.opacity * 100)}
+              min={0}
+              max={100}
+              onChange={(v) => setLogo({ opacity: v / 100 })}
             />
-          </Field>
-          <Field label="Agente / inmobiliaria">
-            <input
-              value={reel.agent}
-              onChange={(e) => set("agent", e.target.value)}
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Contacto (cierre)">
-            <input
-              value={reel.contact}
-              onChange={(e) => set("contact", e.target.value)}
-              className={fieldClass}
-            />
-          </Field>
-          <Field label="Logo (URL, opcional)">
-            <input
-              value={reel.logoUrl ?? ""}
-              onChange={(e) => set("logoUrl", e.target.value || undefined)}
-              placeholder="Marca Cortex por defecto"
-              className={fieldClass}
-            />
-          </Field>
+            <Row2>
+              <Pick label="Entrada" value={reel.logo.enter} options={ANIMATIONS} onChange={(v) => setLogo({ enter: v })} />
+              <Pick label="Salida" value={reel.logo.exit} options={ANIMATIONS} onChange={(v) => setLogo({ exit: v })} />
+            </Row2>
+          </Section>
+
+          {(["topOverlay", "bottomOverlay"] as const).map((edge) => {
+            const o = reel[edge];
+            return (
+              <Section
+                key={edge}
+                title={edge === "topOverlay" ? "Overlay superior" : "Overlay inferior"}
+              >
+                <label className="flex items-center gap-2 text-xs text-foreground/70">
+                  <input
+                    type="checkbox"
+                    checked={o.enabled}
+                    onChange={(e) => setOverlay(edge, { enabled: e.target.checked })}
+                  />
+                  Activado
+                </label>
+                {o.enabled && (
+                  <>
+                    <Row2>
+                      <Pick
+                        label="Tipo"
+                        value={o.kind}
+                        options={["gradient", "solid"] as const}
+                        onChange={(v) => setOverlay(edge, { kind: v })}
+                      />
+                      <div className="flex flex-col gap-1">
+                        <span className={lbl}>Color</span>
+                        <input
+                          type="color"
+                          value={/^#/.test(o.color) ? o.color : "#060a1c"}
+                          onChange={(e) => setOverlay(edge, { color: e.target.value })}
+                          className="h-8 w-full rounded-sm bg-transparent"
+                        />
+                      </div>
+                    </Row2>
+                    <Slider
+                      label="Opacidad"
+                      value={Math.round(o.opacity * 100)}
+                      min={0}
+                      max={100}
+                      onChange={(v) => setOverlay(edge, { opacity: v / 100 })}
+                    />
+                    <Slider
+                      label="Altura (%)"
+                      value={o.size}
+                      min={0}
+                      max={100}
+                      onChange={(v) => setOverlay(edge, { size: v })}
+                    />
+                  </>
+                )}
+              </Section>
+            );
+          })}
+
+          <Section title="Film Burn (light leak)">
+            <label className="flex items-center gap-2 text-xs text-foreground/70">
+              <input
+                type="checkbox"
+                checked={reel.filmBurn.enabled}
+                onChange={(e) =>
+                  set("filmBurn", { ...reel.filmBurn, enabled: e.target.checked })
+                }
+              />
+              Destello analógico cálido en cada corte
+            </label>
+            {reel.filmBurn.enabled && (
+              <Slider
+                label="Intensidad"
+                value={Math.round(reel.filmBurn.intensity * 100)}
+                min={0}
+                max={100}
+                onChange={(v) =>
+                  set("filmBurn", { ...reel.filmBurn, intensity: v / 100 })
+                }
+              />
+            )}
+          </Section>
 
           {error && <p className="text-danger text-sm">{error}</p>}
 
@@ -297,14 +526,10 @@ export default function AdminContentPage() {
               </>
             )}
           </button>
-          {rendering && (
-            <p className="text-[11px] text-foreground/40">
-              La primera exportación puede tardar (descarga el motor de video).
-            </p>
-          )}
           <p className="flex items-center gap-1.5 text-[11px] text-foreground/35">
             <Film className="h-3 w-3" />
             {(durationInFrames / FPS).toFixed(1)}s · {ar.width}×{ar.height}
+            {rendering && " · la primera exportación tarda"}
           </p>
         </div>
       </div>
@@ -312,7 +537,136 @@ export default function AdminContentPage() {
   );
 }
 
-function ReelThumb({
+/* ------------------------------------------------------------------ */
+/*  primitives                                                         */
+/* ------------------------------------------------------------------ */
+
+const field =
+  "w-full bg-transparent border-b border-foreground/15 focus:border-terracotta outline-none text-foreground placeholder:text-foreground/30 text-sm py-2 transition-colors";
+const lbl = "text-[11px] uppercase tracking-[0.1em] text-foreground/40";
+
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className={lbl}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function Section({
+  title,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      className="rounded-sm border border-foreground/10 [&_summary]:list-none"
+    >
+      <summary className="cursor-pointer select-none px-3.5 py-2.5 text-sm text-foreground/80">
+        {title}
+      </summary>
+      <div className="flex flex-col gap-3 border-t border-foreground/10 px-3.5 py-3.5">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+function Row2({ children }: { children: React.ReactNode }) {
+  return <div className="grid grid-cols-2 gap-3">{children}</div>;
+}
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+        active
+          ? "border-terracotta bg-terracotta text-white"
+          : "border-foreground/15 text-foreground/60 hover:border-terracotta/60"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Slider({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="flex justify-between text-[11px] text-foreground/40">
+        <span className="uppercase tracking-[0.1em]">{label}</span>
+        <span className="tabular-nums text-foreground/60">{Math.round(value)}</span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="accent-terracotta"
+      />
+    </label>
+  );
+}
+
+function Pick<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly T[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className={lbl}>{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="rounded-sm border border-foreground/15 bg-transparent px-2 py-1.5 text-xs text-foreground outline-none focus:border-terracotta"
+      >
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function Thumb({
   url,
   seq,
   onRemove,
@@ -351,23 +705,6 @@ function ReelThumb({
       >
         ✕
       </button>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] uppercase tracking-[0.12em] text-foreground/40">
-        {label}
-      </label>
-      {children}
     </div>
   );
 }

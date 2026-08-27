@@ -1,11 +1,6 @@
 import { Composition } from "remotion";
 import { PropertyReelTemplate } from "./PropertyReelTemplate";
-import {
-  ASPECT_RATIOS,
-  DEFAULT_REEL_PROPS,
-  FPS,
-  reelDurationInFrames,
-} from "./constants";
+import { ASPECT_RATIOS, DEFAULT_REEL_PROPS, FPS, reelDuration } from "./constants";
 
 export function RemotionRoot() {
   return (
@@ -15,12 +10,15 @@ export function RemotionRoot() {
       fps={FPS}
       width={ASPECT_RATIOS.vertical.width}
       height={ASPECT_RATIOS.vertical.height}
-      durationInFrames={reelDurationInFrames(DEFAULT_REEL_PROPS.photos.length)}
+      durationInFrames={reelDuration(
+        DEFAULT_REEL_PROPS.photos.length,
+        DEFAULT_REEL_PROPS.transition,
+      )}
       defaultProps={DEFAULT_REEL_PROPS}
       calculateMetadata={({ props }) => {
         const ar = ASPECT_RATIOS[props.aspectRatio] ?? ASPECT_RATIOS.vertical;
         return {
-          durationInFrames: reelDurationInFrames(props.photos.length),
+          durationInFrames: reelDuration(props.photos.length, props.transition),
           width: ar.width,
           height: ar.height,
         };

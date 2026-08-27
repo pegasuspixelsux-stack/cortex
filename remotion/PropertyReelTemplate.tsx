@@ -1,76 +1,283 @@
+import React from "react";
 import {
   AbsoluteFill,
   Img,
-  Sequence,
   interpolate,
-  spring,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
 import {
+  TransitionSeries,
+  linearTiming,
+  type TransitionPresentation,
+  type TransitionPresentationComponentProps,
+} from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
+import { slide } from "@remotion/transitions/slide";
+import { wipe } from "@remotion/transitions/wipe";
+import { none } from "@remotion/transitions/none";
+import {
   BRAND,
   CTA_DURATION,
   SCENE_DURATION,
+  TRANSITION_DURATION,
+  type LogoConfig,
+  type OverlayConfig,
   type PropertyReelProps,
+  type TextLine,
+  type TransitionKind,
 } from "./constants";
+import { fontStack } from "./fonts";
+import { animate } from "./animations";
 
-function CortexMark({ size, color }: { size: number; color: string }) {
-  const unit = size / 24;
-  const box = 8 * unit;
-  const far = 14 * unit;
-  const near = 2 * unit;
+/* ------------------------------------------------------------------ */
+/*  helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+function toRgba(color: string, alpha: number): string {
+  const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(color.trim());
+  if (m) {
+    const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  const rgb = /^rgba?\(([^)]+)\)$/.exec(color.trim());
+  if (rgb) {
+    const parts = rgb[1].split(",").slice(0, 3).map((s) => s.trim());
+    return `rgba(${parts.join(",")},${alpha})`;
+  }
+  return color;
+}
+
+const anchorX = (align: TextLine["align"]) =>
+  align === "center" ? "-50%" : align === "right" ? "-100%" : "0";
+
+/** DOM-only zoom transition (scale + crossfade) — no WebGL, renders in MP4. */
+const ZoomPresentation: React.FC<
+  TransitionPresentationComponentProps<Record<string, unknown>>
+> = ({ children, presentationDirection, presentationProgress }) => {
+  const entering = presentationDirection === "entering";
+  const scale = entering
+    ? interpolate(presentationProgress, [0, 1], [1.16, 1])
+    : interpolate(presentationProgress, [0, 1], [1, 0.94]);
+  const opacity = entering ? presentationProgress : 1 - presentationProgress;
+  return (
+    <AbsoluteFill style={{ transform: `scale(${scale})`, opacity }}>
+      {children}
+    </AbsoluteFill>
+  );
+};
+const domZoom = (): TransitionPresentation<Record<string, unknown>> => ({
+  component: ZoomPresentation,
+  props: {},
+});
+
+function transitionPresentation(
+  kind: TransitionKind,
+): TransitionPresentation<Record<string, unknown>> {
+  const p =
+    kind === "crossfade"
+      ? fade()
+      : kind === "slide-h"
+        ? slide({ direction: "from-right" })
+        : kind === "slide-v"
+          ? slide({ direction: "from-bottom" })
+          : kind === "zoom"
+            ? domZoom()
+            : kind === "wipe"
+              ? wipe({ direction: "from-left" })
+              : none();
+  return p as TransitionPresentation<Record<string, unknown>>;
+}
+
+function CortexMark({ size }: { size: number }) {
+  const u = size / 24;
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <rect x={near} y={near} width={box} height={box} fill={color} />
-      <rect x={far} y={near} width={box} height={box} fill={color} />
-      <rect x={near} y={far} width={box} height={box} fill={color} />
-      <rect x={far} y={far} width={box} height={box} fill={color} />
+      {[
+        [2, 2],
+        [14, 2],
+        [2, 14],
+        [14, 14],
+      ].map(([x, y], i) => (
+        <rect key={i} x={x * u} y={y * u} width={8 * u} height={8 * u} fill={BRAND.cream} />
+      ))}
     </svg>
   );
 }
 
-function Logo({ logoUrl, size }: { logoUrl?: string; size: number }) {
-  if (logoUrl) {
-    return (
-      <Img
-        src={logoUrl}
-        style={{ height: size, width: "auto", objectFit: "contain" }}
-      />
-    );
-  }
+/* ------------------------------------------------------------------ */
+/*  layers                                                             */
+/* ------------------------------------------------------------------ */
+
+function OverlayBand({
+  overlay,
+  edge,
+}: {
+  overlay: OverlayConfig;
+  edge: "top" | "bottom";
+}) {
+  if (!overlay.enabled || overlay.opacity <= 0 || overlay.size <= 0) return null;
+  const solid = overlay.kind === "solid";
+  const dir = edge === "bottom" ? "to top" : "to bottom";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: size * 0.35 }}>
-      <CortexMark size={size} color={BRAND.cream} />
-      <span
-        style={{
-          color: BRAND.cream,
-          fontSize: size * 0.78,
-          fontWeight: 300,
-          letterSpacing: size * 0.02,
-          fontFamily: "Georgia, 'Times New Roman', serif",
-        }}
-      >
-        Cortex
-      </span>
+    <div
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        [edge]: 0,
+        height: `${overlay.size}%`,
+        background: solid
+          ? toRgba(overlay.color, overlay.opacity)
+          : `linear-gradient(${dir}, ${toRgba(overlay.color, overlay.opacity)} 0%, ${toRgba(overlay.color, 0)} 100%)`,
+      }}
+    />
+  );
+}
+
+function Line({
+  line,
+  sceneDuration,
+}: {
+  line: TextLine;
+  sceneDuration: number;
+}) {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  if (!line.text.trim()) return null;
+
+  const a = animate({
+    frame,
+    fps,
+    durationInFrames: sceneDuration,
+    enter: line.enter,
+    exit: line.exit,
+  });
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: `${line.x}%`,
+        top: `${line.y}%`,
+        maxWidth: "84%",
+        transform: `translate(${anchorX(line.align)}, 0) translate(${a.x}px, ${a.y}px)`,
+        textAlign: line.align,
+        opacity: a.opacity,
+        color: line.color,
+        fontFamily: fontStack(line.fontFamily),
+        fontSize: line.fontSize,
+        fontWeight: line.fontFamily === "Montserrat" ? 700 : 400,
+        lineHeight: 1.12,
+        letterSpacing:
+          line.fontFamily === "Cinzel" ? line.fontSize * 0.08 : "normal",
+        whiteSpace: "pre-line",
+      }}
+    >
+      {line.text}
     </div>
   );
 }
 
+function LogoLayer({
+  logo,
+  sceneDuration,
+}: {
+  logo: LogoConfig;
+  sceneDuration: number;
+}) {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const a = animate({
+    frame,
+    fps,
+    durationInFrames: sceneDuration,
+    enter: logo.enter,
+    exit: logo.exit,
+  });
+
+  const M = 56;
+  const box: React.CSSProperties =
+    logo.position === "custom"
+      ? { left: `${logo.x}%`, top: `${logo.y}%` }
+      : logo.position === "top-left"
+        ? { top: M, left: M }
+        : logo.position === "top-right"
+          ? { top: M, right: M }
+          : logo.position === "bottom-left"
+            ? { bottom: M, left: M }
+            : { bottom: M, right: M };
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        ...box,
+        opacity: a.opacity * logo.opacity,
+        transform: `translate(${a.x}px, ${a.y}px)`,
+      }}
+    >
+      {logo.url ? (
+        <Img
+          src={logo.url}
+          style={{ height: logo.size, width: "auto", objectFit: "contain" }}
+        />
+      ) : (
+        <CortexMark size={logo.size} />
+      )}
+    </div>
+  );
+}
+
+/** Warm analogue light-leak that flashes over each cut. Pure CSS (no GL). */
+function FilmBurn({
+  intensity,
+  boundaries,
+}: {
+  intensity: number;
+  boundaries: number[];
+}) {
+  const frame = useCurrentFrame();
+  let o = 0.05 * intensity;
+  for (const b of boundaries) {
+    const d = Math.abs(frame - b);
+    if (d < 18) {
+      o = Math.max(o, interpolate(d, [0, 18], [0.85 * intensity, 0]));
+    }
+  }
+  if (o <= 0.001) return null;
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none", mixBlendMode: "screen", opacity: o }}>
+      <AbsoluteFill
+        style={{
+          background:
+            "radial-gradient(120% 80% at 84% 12%, rgba(255,176,92,0.95) 0%, rgba(255,120,40,0) 55%)",
+        }}
+      />
+      <AbsoluteFill
+        style={{
+          background:
+            "radial-gradient(95% 70% at 8% 92%, rgba(255,96,52,0.8) 0%, rgba(255,96,52,0) 50%)",
+        }}
+      />
+    </AbsoluteFill>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  scenes                                                             */
+/* ------------------------------------------------------------------ */
+
 function PhotoScene({
   url,
   index,
-  total,
   reel,
 }: {
   url: string;
   index: number;
-  total: number;
   reel: PropertyReelProps;
 }) {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  // Ken Burns — alternate zoom-in / zoom-out per scene.
   const t = frame / SCENE_DURATION;
   const zoomIn = index % 2 === 0;
   const scale = zoomIn
@@ -78,224 +285,96 @@ function PhotoScene({
     : interpolate(t, [0, 1], [1.18, 1.06]);
   const drift = interpolate(t, [0, 1], [0, zoomIn ? -24 : 24]);
 
-  const textIn = spring({ frame: frame - 8, fps, config: { damping: 200 } });
-  const textOut = interpolate(
-    frame,
-    [SCENE_DURATION - 14, SCENE_DURATION],
-    [1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
-  );
-  const textOpacity = Math.min(textIn, textOut);
-  const textShift = interpolate(textIn, [0, 1], [40, 0]);
-
   return (
     <AbsoluteFill style={{ backgroundColor: BRAND.ink, overflow: "hidden" }}>
-      <AbsoluteFill
-        style={{ transform: `scale(${scale}) translateX(${drift}px)` }}
-      >
+      <AbsoluteFill style={{ transform: `scale(${scale}) translateX(${drift}px)` }}>
         <Img src={url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </AbsoluteFill>
 
-      {/* legibility gradient */}
-      <AbsoluteFill
-        style={{
-          background: `linear-gradient(to top, rgba(8,10,28,0.92) 0%, rgba(8,10,28,0.45) 32%, rgba(8,10,28,0) 62%)`,
-        }}
-      />
+      <OverlayBand overlay={reel.topOverlay} edge="top" />
+      <OverlayBand overlay={reel.bottomOverlay} edge="bottom" />
 
-      {/* logo, top-right */}
-      <div style={{ position: "absolute", top: 56, right: 56, opacity: 0.9 }}>
-        <Logo logoUrl={reel.logoUrl} size={34} />
-      </div>
-
-      {/* progress ticks */}
-      <div
-        style={{
-          position: "absolute",
-          top: 40,
-          left: 56,
-          right: 56,
-          display: "flex",
-          gap: 6,
-        }}
-      >
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            style={{
-              flex: 1,
-              height: 3,
-              borderRadius: 2,
-              backgroundColor:
-                i < index ? BRAND.cream : i === index ? BRAND.accentBright : "rgba(255,255,255,0.25)",
-            }}
-          />
+      {reel.lines
+        .filter((l) => l.id !== "cta")
+        .map((l) => (
+          <Line key={l.id} line={l} sceneDuration={SCENE_DURATION} />
         ))}
-      </div>
 
-      {/* text block */}
-      <div
-        style={{
-          position: "absolute",
-          left: 56,
-          right: 56,
-          bottom: 72,
-          opacity: textOpacity,
-          transform: `translateY(${textShift}px)`,
-        }}
-      >
-        <div
-          style={{
-            color: BRAND.accentBright,
-            fontSize: 22,
-            letterSpacing: 5,
-            textTransform: "uppercase",
-            fontFamily: "Georgia, serif",
-            marginBottom: 14,
-          }}
-        >
-          {reel.zone}
-        </div>
-        <div
-          style={{
-            color: BRAND.cream,
-            fontSize: 68,
-            lineHeight: 1.05,
-            fontWeight: 300,
-            fontFamily: "Georgia, 'Times New Roman', serif",
-          }}
-        >
-          {reel.title}
-        </div>
-        <div
-          style={{
-            marginTop: 20,
-            color: BRAND.cream,
-            fontSize: 34,
-            fontWeight: 400,
-            fontFamily: "Arial, Helvetica, sans-serif",
-          }}
-        >
-          {reel.price}
-        </div>
-      </div>
+      <LogoLayer logo={reel.logo} sceneDuration={SCENE_DURATION} />
     </AbsoluteFill>
   );
 }
 
 function CtaScene({ reel }: { reel: PropertyReelProps }) {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const logoIn = spring({ frame, fps, config: { damping: 200 } });
-  const lineIn = spring({ frame: frame - 12, fps, config: { damping: 200 } });
-  const contactIn = spring({ frame: frame - 22, fps, config: { damping: 200 } });
+  const title = reel.lines.find((l) => l.id === "title");
+  const cta = reel.lines.find((l) => l.id === "cta");
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: BRAND.ink,
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 40,
-        padding: 80,
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          opacity: logoIn,
-          transform: `translateY(${interpolate(logoIn, [0, 1], [30, 0])}px)`,
-        }}
-      >
-        <Logo logoUrl={reel.logoUrl} size={64} />
-      </div>
-
-      <div
-        style={{
-          width: 60,
-          height: 2,
-          backgroundColor: BRAND.accentBright,
-          opacity: lineIn,
-        }}
-      />
-
-      <div style={{ opacity: lineIn }}>
-        <div
-          style={{
-            color: BRAND.cream,
-            fontSize: 40,
-            fontWeight: 300,
-            fontFamily: "Georgia, 'Times New Roman', serif",
-          }}
-        >
-          {reel.title}
-        </div>
-        <div
-          style={{
-            marginTop: 12,
-            color: BRAND.creamSoft,
-            fontSize: 24,
-            letterSpacing: 3,
-            textTransform: "uppercase",
-            fontFamily: "Georgia, serif",
-          }}
-        >
-          {reel.zone}
-        </div>
-      </div>
-
-      <div
-        style={{
-          opacity: contactIn,
-          transform: `translateY(${interpolate(contactIn, [0, 1], [20, 0])}px)`,
-          marginTop: 8,
-        }}
-      >
-        <div
-          style={{
-            color: BRAND.cream,
-            fontSize: 26,
-            fontFamily: "Arial, Helvetica, sans-serif",
-          }}
-        >
-          {reel.agent}
-        </div>
-        <div
-          style={{
-            marginTop: 8,
-            color: BRAND.creamSoft,
-            fontSize: 22,
-            fontFamily: "Arial, Helvetica, sans-serif",
-          }}
-        >
-          {reel.contact}
-        </div>
-      </div>
+    <AbsoluteFill style={{ backgroundColor: BRAND.ink }}>
+      <OverlayBand overlay={reel.topOverlay} edge="top" />
+      <OverlayBand overlay={reel.bottomOverlay} edge="bottom" />
+      {title && <Line line={title} sceneDuration={CTA_DURATION} />}
+      {cta && <Line line={cta} sceneDuration={CTA_DURATION} />}
+      <LogoLayer logo={reel.logo} sceneDuration={CTA_DURATION} />
     </AbsoluteFill>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  root                                                               */
+/* ------------------------------------------------------------------ */
+
 export function PropertyReelTemplate(props: PropertyReelProps) {
-  const photos = props.photos.filter((u) => typeof u === "string" && u.length > 0);
+  const photos = props.photos.filter(
+    (u) => typeof u === "string" && u.length > 0,
+  );
+  const td = props.transition === "cut" ? 1 : TRANSITION_DURATION;
+  const presentation = transitionPresentation(props.transition);
+
+  // Approx frame position of each cut, for the film-burn flashes.
+  const boundaries: number[] = [];
+  for (let i = 1; i <= photos.length; i++) {
+    boundaries.push(i * (SCENE_DURATION - td));
+  }
 
   return (
     <AbsoluteFill style={{ backgroundColor: BRAND.ink }}>
-      {photos.map((url, i) => (
-        <Sequence
-          key={`${url}-${i}`}
-          from={i * SCENE_DURATION}
-          durationInFrames={SCENE_DURATION}
-        >
-          <PhotoScene url={url} index={i} total={photos.length} reel={props} />
-        </Sequence>
-      ))}
-      <Sequence
-        from={photos.length * SCENE_DURATION}
-        durationInFrames={CTA_DURATION}
-      >
-        <CtaScene reel={props} />
-      </Sequence>
+      <TransitionSeries>
+        {photos.flatMap((url, i) => {
+          const seq = (
+            <TransitionSeries.Sequence
+              key={`s${i}`}
+              durationInFrames={SCENE_DURATION}
+            >
+              <PhotoScene url={url} index={i} reel={props} />
+            </TransitionSeries.Sequence>
+          );
+          if (i === 0) return [seq];
+          return [
+            <TransitionSeries.Transition
+              key={`t${i}`}
+              presentation={presentation}
+              timing={linearTiming({ durationInFrames: td })}
+            />,
+            seq,
+          ];
+        })}
+
+        {photos.length > 0 && (
+          <TransitionSeries.Transition
+            key="tcta"
+            presentation={presentation}
+            timing={linearTiming({ durationInFrames: td })}
+          />
+        )}
+        <TransitionSeries.Sequence key="cta" durationInFrames={CTA_DURATION}>
+          <CtaScene reel={props} />
+        </TransitionSeries.Sequence>
+      </TransitionSeries>
+
+      {props.filmBurn.enabled && (
+        <FilmBurn intensity={props.filmBurn.intensity} boundaries={boundaries} />
+      )}
     </AbsoluteFill>
   );
 }
