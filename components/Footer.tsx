@@ -35,7 +35,7 @@ const SOCIALS = [
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-ink-soft">
+    <footer className="w-full bg-navy">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 pt-20 pb-12">
         {/* Top grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">

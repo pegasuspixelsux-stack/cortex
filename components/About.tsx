@@ -16,7 +16,7 @@ const line = {
 
 export default function About() {
   return (
-    <section className="w-full bg-ink px-6 md:px-12 py-28 md:py-40">
+    <section className="w-full bg-navy px-6 md:px-12 py-28 md:py-40">
       <motion.div
         initial="hidden"
         whileInView="show"

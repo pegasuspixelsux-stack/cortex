@@ -13,6 +13,8 @@
   --color-ink-soft: #221c17;
   --color-cream: #f4ede4;
   --color-cream-soft: #c9beb2;
+
+  --color-navy: #0f1e34;
 }
 
 @theme inline {
@@ -30,6 +32,8 @@
   --color-ink-soft: var(--color-ink-soft);
   --color-cream: var(--color-cream);
   --color-cream-soft: var(--color-cream-soft);
+
+  --color-navy: var(--color-navy);
 }
 
 body {
