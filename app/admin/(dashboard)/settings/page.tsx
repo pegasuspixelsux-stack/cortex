@@ -6,6 +6,8 @@ import {
   cachedSettings,
   subscribeSiteSettings,
   updateSiteSettings,
+  LOGO_FONTS,
+  type LogoFont,
   type SiteSettings,
 } from "@/lib/siteSettings";
 import { uploadImage } from "@/lib/admin/storage";
@@ -18,6 +20,8 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>(cachedSettings);
   const [logoText, setLogoText] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoFont, setLogoFont] = useState<LogoFont>("sans");
+  const [logoSize, setLogoSize] = useState(18);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -32,6 +36,8 @@ export default function AdminSettingsPage() {
         if (!hydrated.current) {
           setLogoText(s.logoText);
           setLogoUrl(s.logoUrl ?? "");
+          setLogoFont(s.logoFont);
+          setLogoSize(s.logoSize);
           hydrated.current = true;
         }
       }),
@@ -58,6 +64,8 @@ export default function AdminSettingsPage() {
       await updateSiteSettings({
         logoText: logoText.trim() || "Cortex",
         logoUrl: logoUrl.trim(),
+        logoFont,
+        logoSize,
       });
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
@@ -71,6 +79,8 @@ export default function AdminSettingsPage() {
   const preview: SiteSettings = {
     logoText: logoText || "Cortex",
     logoUrl: logoUrl || undefined,
+    logoFont,
+    logoSize,
   };
 
   return (
@@ -149,6 +159,40 @@ export default function AdminSettingsPage() {
             placeholder="Cortex"
             className={field}
           />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] uppercase tracking-[0.12em] text-foreground/40">
+              Tipografía
+            </label>
+            <select
+              value={logoFont}
+              onChange={(e) => setLogoFont(e.target.value as LogoFont)}
+              className={field}
+              disabled={!!logoUrl}
+            >
+              {LOGO_FONTS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="flex justify-between text-[11px] text-foreground/40">
+              <span className="uppercase tracking-[0.12em]">Tamaño</span>
+              <span className="tabular-nums text-foreground/60">{logoSize}px</span>
+            </span>
+            <input
+              type="range"
+              min={12}
+              max={40}
+              value={logoSize}
+              onChange={(e) => setLogoSize(Number(e.target.value))}
+              className="accent-terracotta"
+            />
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">

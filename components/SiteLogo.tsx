@@ -34,7 +34,13 @@ export default function SiteLogo({
   settings: override,
 }: SiteLogoProps) {
   const live = useSiteSettings();
-  const { logoUrl, logoText } = override ?? live;
+  const { logoUrl, logoText, logoFont, logoSize } = override ?? live;
+  const fontClass =
+    logoFont === "serif"
+      ? "font-serif"
+      : logoFont === "mono"
+        ? "font-mono"
+        : "font-sans";
 
   const markColor =
     variant === "overlay"
@@ -55,16 +61,21 @@ export default function SiteLogo({
       <img
         src={logoUrl}
         alt={logoText || "Cortex"}
-        className={`h-7 w-auto object-contain ${className ?? ""}`}
+        style={{ height: Math.round(logoSize * 1.6) }}
+        className={`w-auto object-contain ${className ?? ""}`}
       />
     );
   }
 
+  const mark = Math.round(logoSize * 1.2);
   return (
-    <span className={`flex items-center gap-2.5 ${className ?? ""}`}>
+    <span
+      className={`flex items-center ${className ?? ""}`}
+      style={{ gap: Math.round(logoSize * 0.55) }}
+    >
       <svg
-        width="22"
-        height="22"
+        width={mark}
+        height={mark}
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -75,7 +86,10 @@ export default function SiteLogo({
         <rect x="2" y="14" width="8" height="8" fill="currentColor" />
         <rect x="14" y="14" width="8" height="8" fill="currentColor" />
       </svg>
-      <span className={`text-lg font-light tracking-wide ${textColor}`}>
+      <span
+        className={`font-light tracking-wide ${fontClass} ${textColor}`}
+        style={{ fontSize: logoSize }}
+      >
         {logoText || "Cortex"}
       </span>
     </span>
