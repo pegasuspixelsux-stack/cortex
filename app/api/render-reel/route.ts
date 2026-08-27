@@ -1,7 +1,7 @@
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs/promises";
-import { bundle } from "@remotion/bundler";
+import { existsSync } from "node:fs";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import {
   ASPECT_RATIOS,
@@ -9,22 +9,13 @@ import {
   type PropertyReelProps,
 } from "@/remotion/constants";
 
-// Rendering downloads a headless browser on the first cold start and then
+// The renderer downloads a headless browser on the first cold start, then
 // composites the video — give it room.
 export const maxDuration = 300;
 
-let bundlePromise: Promise<string> | null = null;
-
-/** Bundle the Remotion project once per warm instance. */
-function getBundle(): Promise<string> {
-  if (!bundlePromise) {
-    bundlePromise = bundle({
-      entryPoint: path.join(process.cwd(), "remotion", "index.ts"),
-      onProgress: () => undefined,
-    });
-  }
-  return bundlePromise;
-}
+// Built by `scripts/bundle-remotion.mjs` (npm prebuild), traced into the
+// function via next.config outputFileTracingIncludes.
+const SERVE_DIR = path.join(process.cwd(), ".remotion-bundle");
 
 function sanitize(raw: unknown): PropertyReelProps {
   const p = (raw ?? {}) as Partial<PropertyReelProps>;
@@ -42,8 +33,7 @@ function sanitize(raw: unknown): PropertyReelProps {
     price: String(p.price ?? DEFAULT_REEL_PROPS.price).slice(0, 60),
     agent: String(p.agent ?? DEFAULT_REEL_PROPS.agent).slice(0, 120),
     contact: String(p.contact ?? DEFAULT_REEL_PROPS.contact).slice(0, 160),
-    logoUrl:
-      typeof p.logoUrl === "string" && p.logoUrl ? p.logoUrl : undefined,
+    logoUrl: typeof p.logoUrl === "string" && p.logoUrl ? p.logoUrl : undefined,
   };
 }
 
@@ -56,20 +46,25 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  if (!existsSync(SERVE_DIR)) {
+    return Response.json(
+      { error: "El motor de video no está disponible en este entorno." },
+      { status: 503 },
+    );
+  }
 
   const outPath = path.join(os.tmpdir(), `cortex-reel-${Date.now()}.mp4`);
 
   try {
-    const serveUrl = await getBundle();
     const composition = await selectComposition({
-      serveUrl,
+      serveUrl: SERVE_DIR,
       id: "PropertyReel",
       inputProps,
     });
 
     await renderMedia({
       composition,
-      serveUrl,
+      serveUrl: SERVE_DIR,
       codec: "h264",
       outputLocation: outPath,
       inputProps,
