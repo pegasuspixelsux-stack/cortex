@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { ArrowRight, Upload } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { ZONES, PROPERTY_TYPES } from "@/lib/properties";
 import {
   createProperty,
@@ -11,7 +11,7 @@ import {
   type AdminPropertyInput,
   type AdminPropertyStatus,
 } from "@/lib/admin/properties";
-import { uploadImage } from "@/lib/admin/storage";
+import PropertyMediaManager from "@/components/admin/PropertyMediaManager";
 
 const inputClass =
   "w-full bg-transparent border-b border-foreground/15 focus:border-terracotta outline-none text-foreground placeholder:text-foreground/30 text-sm py-2.5 transition-colors";
@@ -34,7 +34,7 @@ export default function PropertyForm({
   const [type, setType] = useState(initialValues?.type ?? PROPERTY_TYPES[0]);
   const [sqm, setSqm] = useState(String(initialValues?.sqm ?? ""));
   const [beds, setBeds] = useState(String(initialValues?.beds ?? ""));
-  const [imageUrl, setImageUrl] = useState(initialValues?.images?.[0] ?? "");
+  const [images, setImages] = useState<string[]>(initialValues?.images ?? []);
   const [description, setDescription] = useState(
     initialValues?.description ?? "",
   );
@@ -42,22 +42,8 @@ export default function PropertyForm({
     initialValues?.status ?? "Publicada",
   );
 
-  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  async function handleFileUpload(file: File) {
-    setUploading(true);
-    setError(null);
-    try {
-      const url = await uploadImage(file, "properties");
-      setImageUrl(url);
-    } catch {
-      setError("No se pudo subir la imagen a Storage.");
-    } finally {
-      setUploading(false);
-    }
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,7 +57,7 @@ export default function PropertyForm({
       type,
       sqm: Number(sqm) || 0,
       beds: Number(beds) || 0,
-      images: imageUrl ? [imageUrl] : [],
+      images,
       description,
       status,
     };
@@ -178,39 +164,11 @@ export default function PropertyForm({
         </Field>
       </div>
 
-      <Field label="URL de imagen (Unsplash) o subir archivo">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://images.unsplash.com/..."
-            className={inputClass}
-          />
-          <label className="flex items-center gap-2 text-xs text-foreground/60 border border-foreground/15 hover:border-terracotta px-4 py-2.5 rounded-full cursor-pointer transition-colors shrink-0">
-            <Upload className="w-3.5 h-3.5" />
-            {uploading ? "Subiendo..." : "Subir a Storage"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={uploading}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFileUpload(file);
-              }}
-            />
-          </label>
-        </div>
-        {imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt="Vista previa"
-            className="mt-3 w-full max-w-xs aspect-video object-cover rounded-sm border border-foreground/10"
-          />
-        )}
-      </Field>
+      <PropertyMediaManager
+        value={images}
+        onChange={setImages}
+        propertyId={propertyId}
+      />
 
       <Field label="Descripción">
         <textarea
@@ -226,7 +184,7 @@ export default function PropertyForm({
 
       <motion.button
         type="submit"
-        disabled={submitting || uploading}
+        disabled={submitting}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className="group inline-flex items-center justify-center gap-2 bg-terracotta hover:bg-terracotta-hover disabled:opacity-60 text-white text-sm px-7 py-3.5 rounded-full transition-colors w-fit"
