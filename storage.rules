@@ -4,10 +4,11 @@ rules_version = '2';
 // Same role model as firestore.rules — resolved by reading the caller's
 // users/{uid} doc straight from Firestore.
 //
-//   properties/*, agents/*  — world-readable (image URLs are rendered on
-//                             the public marketing site); uploads/overwrites
-//                             restricted to admin or editor, images only,
-//                             under 5 MB. Deletes: admin or editor.
+//   properties/**, agents/**, brand/** — world-readable (image URLs are
+//                             rendered on the public site and in reels);
+//                             uploads/overwrites restricted to admin or
+//                             editor, images only, under 5 MB. Deletes:
+//                             admin or editor.
 //   everything else          — denied.
 
 service firebase.storage {
@@ -32,13 +33,21 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
-    match /properties/{fileName} {
+    // Property photos live at properties/<id>/<file> (and
+    // properties/<id>/imported/<file> for Drive imports); logos at brand/.
+    match /properties/{path=**} {
       allow read: if true;
       allow create, update: if isEditorOrAdmin() && isValidImage();
       allow delete: if isEditorOrAdmin();
     }
 
-    match /agents/{fileName} {
+    match /agents/{path=**} {
+      allow read: if true;
+      allow create, update: if isEditorOrAdmin() && isValidImage();
+      allow delete: if isEditorOrAdmin();
+    }
+
+    match /brand/{path=**} {
       allow read: if true;
       allow create, update: if isEditorOrAdmin() && isValidImage();
       allow delete: if isEditorOrAdmin();
