@@ -45,7 +45,18 @@ const lg = (
   opacity: number,
   enter: AnimKind,
   exit: AnimKind,
-): LogoStyle => ({ size, position, opacity, enter, exit, x: 88, y: 8 });
+  font: FontKey = "Playfair Display",
+): LogoStyle => ({
+  size,
+  position,
+  opacity,
+  enter,
+  exit,
+  x: 88,
+  y: 8,
+  text: "",
+  font,
+});
 
 const noBurn: FilmBurnConfig = { enabled: false, intensity: 0.5 };
 

@@ -222,6 +222,20 @@ function LogoLayer({
           src={logo.url}
           style={{ height: logo.size, width: "auto", objectFit: "contain" }}
         />
+      ) : logo.text.trim() ? (
+        <span
+          style={{
+            color: BRAND.cream,
+            fontFamily: fontStack(logo.font),
+            fontSize: logo.size,
+            fontWeight: logo.font === "Montserrat" ? 700 : 400,
+            letterSpacing:
+              logo.font === "Cinzel" ? logo.size * 0.08 : logo.size * 0.01,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {logo.text}
+        </span>
       ) : (
         <CortexMark size={logo.size} />
       )}

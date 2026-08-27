@@ -411,6 +411,26 @@ export default function AdminContentPage() {
                 }}
               />
             </div>
+            {!reel.logo.url && (
+              <>
+                <p className="text-[11px] text-foreground/35">
+                  Sin imagen: se usa el texto de abajo (o la marca Cortex si
+                  está vacío).
+                </p>
+                <input
+                  value={reel.logo.text}
+                  onChange={(e) => setLogo({ text: e.target.value })}
+                  placeholder="Texto del logo, ej. Cortex"
+                  className={field}
+                />
+                <Pick
+                  label="Tipografía del logo"
+                  value={reel.logo.font}
+                  options={FONT_KEYS}
+                  onChange={(v) => setLogo({ font: v })}
+                />
+              </>
+            )}
             <Slider
               label="Tamaño"
               value={reel.logo.size}

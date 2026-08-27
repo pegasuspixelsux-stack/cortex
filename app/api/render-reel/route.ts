@@ -104,6 +104,8 @@ function sanitize(raw: unknown): PropertyReelProps {
     logo: {
       url:
         typeof logo.url === "string" && logo.url ? logo.url.slice(0, 500) : undefined,
+      text: str(logo.text, 60, d.logo.text),
+      font: font(logo.font, d.logo.font),
       size: clamp(logo.size, 12, 260, d.logo.size),
       position:
         logo.position === "top-left" ||

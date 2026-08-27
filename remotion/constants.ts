@@ -99,8 +99,12 @@ export type LogoCorner =
   | "custom";
 
 export interface LogoConfig {
+  /** Image logo (PNG/SVG). Takes precedence over `text` when set. */
   url?: string;
-  /** Composition-space px (height; width auto). */
+  /** Text logo, used when there's no `url`. Empty → the built-in mark. */
+  text: string;
+  font: FontKey;
+  /** Composition-space px (image height / text font size). */
   size: number;
   position: LogoCorner;
   /** Used when position === "custom". */
@@ -154,6 +158,8 @@ export const DEFAULT_LINES: TextLine[] = [
 
 export const DEFAULT_LOGO: LogoConfig = {
   url: undefined,
+  text: "",
+  font: "Playfair Display",
   size: 36,
   position: "top-right",
   x: 88,
