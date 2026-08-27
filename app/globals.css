@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  --color-terracotta: #c2523a;
+  --color-terracotta-hover: #a8442f;
+  --color-terracotta-dark: #d4634b;
+  --color-terracotta-dark-hover: #c05540;
+
+  --color-ink: #171310;
+  --color-ink-soft: #221c17;
+  --color-cream: #f4ede4;
+  --color-cream-soft: #c9beb2;
 }
 
 @theme inline {
@@ -10,13 +20,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
+  --font-serif: var(--font-fraunces);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-terracotta: var(--color-terracotta);
+  --color-terracotta-hover: var(--color-terracotta-hover);
+  --color-terracotta-dark: var(--color-terracotta-dark);
+  --color-terracotta-dark-hover: var(--color-terracotta-dark-hover);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-cream: var(--color-cream);
+  --color-cream-soft: var(--color-cream-soft);
 }
 
 body {
