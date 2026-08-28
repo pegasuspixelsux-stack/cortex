@@ -71,6 +71,8 @@ function sanitizeLines(raw: unknown): TextLine[] {
         src.align === "left" || src.align === "center" || src.align === "right"
           ? src.align
           : d.align,
+      bold: typeof src.bold === "boolean" ? src.bold : d.bold,
+      italic: typeof src.italic === "boolean" ? src.italic : d.italic,
       enter: anim(src.enter, d.enter),
       exit: anim(src.exit, d.exit),
     };

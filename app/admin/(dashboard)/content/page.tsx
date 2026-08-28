@@ -413,6 +413,32 @@ export default function AdminContentPage() {
                   className={field}
                   placeholder="Texto de la línea"
                 />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLine(id, { bold: !l.bold })}
+                    aria-pressed={l.bold}
+                    className={`h-8 w-9 rounded-sm border text-sm font-bold transition-colors ${
+                      l.bold
+                        ? "border-terracotta bg-terracotta/10 text-terracotta"
+                        : "border-foreground/15 text-foreground/60 hover:border-foreground/30"
+                    }`}
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLine(id, { italic: !l.italic })}
+                    aria-pressed={l.italic}
+                    className={`h-8 w-9 rounded-sm border text-sm italic transition-colors ${
+                      l.italic
+                        ? "border-terracotta bg-terracotta/10 text-terracotta"
+                        : "border-foreground/15 text-foreground/60 hover:border-foreground/30"
+                    }`}
+                  >
+                    I
+                  </button>
+                </div>
                 <Row2>
                   <Pick
                     label="Tipografía"

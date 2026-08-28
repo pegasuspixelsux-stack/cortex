@@ -106,6 +106,8 @@ export interface TextLine {
   /** 0–100, % of composition height (top anchor). */
   y: number;
   align: "left" | "center" | "right";
+  bold: boolean;
+  italic: boolean;
   enter: AnimKind;
   exit: AnimKind;
 }
@@ -162,6 +164,8 @@ const line = (over: Partial<TextLine> & Pick<TextLine, "id" | "text">): TextLine
   x: 8,
   y: 68,
   align: "left",
+  bold: false,
+  italic: false,
   enter: "fade-in",
   exit: "fade-out",
   ...over,

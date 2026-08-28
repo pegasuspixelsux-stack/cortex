@@ -37,7 +37,9 @@ const s = (
   align: LineStyle["align"],
   enter: AnimKind,
   exit: AnimKind,
-): LineStyle => ({ fontFamily, fontSize, color, x, y, align, enter, exit });
+  bold = false,
+  italic = false,
+): LineStyle => ({ fontFamily, fontSize, color, x, y, align, bold, italic, enter, exit });
 
 const lg = (
   size: number,

@@ -168,7 +168,8 @@ function Line({
         color: line.color,
         fontFamily: fontStack(line.fontFamily),
         fontSize: line.fontSize,
-        fontWeight: line.fontFamily === "Montserrat" ? 700 : 400,
+        fontWeight: line.bold || line.fontFamily === "Montserrat" ? 700 : 400,
+        fontStyle: line.italic ? "italic" : "normal",
         lineHeight: 1.12,
         letterSpacing:
           line.fontFamily === "Cinzel" ? line.fontSize * 0.08 : "normal",
