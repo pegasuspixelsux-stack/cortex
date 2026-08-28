@@ -1,53 +1,53 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Loader2 } from "lucide-react";
 import {
-  PROPERTIES,
   ZONES,
   PROPERTY_TYPES,
-  TRANSACTION_TYPES,
-  AMENITIES,
   type Zone,
   type PropertyType,
-  type TransactionType,
 } from "@/lib/properties";
+import { OPERATION_TYPES, type OperationType } from "@/lib/admin/properties";
+import {
+  listPublicProperties,
+  type PublicProperty,
+} from "@/lib/publicProperties";
 import PropertyCard from "@/components/PropertyCard";
 
 const PAGE_SIZE = 9;
 
 export default function CatalogView() {
+  const [all, setAll] = useState<PublicProperty[] | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [types, setTypes] = useState<PropertyType[]>([]);
-  const [transactions, setTransactions] = useState<TransactionType[]>([]);
-  const [amenities, setAmenities] = useState<string[]>([]);
+  const [operations, setOperations] = useState<OperationType[]>([]);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    listPublicProperties()
+      .then(setAll)
+      .catch(() => setAll([]));
+  }, []);
 
   const min = minPrice ? Number(minPrice) : undefined;
   const max = maxPrice ? Number(maxPrice) : undefined;
 
   const filtered = useMemo(() => {
-    return PROPERTIES.filter((property) => {
-      if (zones.length && !zones.includes(property.zone)) return false;
-      if (types.length && !types.includes(property.type)) return false;
-      if (
-        transactions.length &&
-        !transactions.includes(property.transactionType)
-      )
+    return (all ?? []).filter((property) => {
+      if (zones.length && !zones.includes(property.zone as Zone)) return false;
+      if (types.length && !types.includes(property.type as PropertyType))
         return false;
-      if (
-        amenities.length &&
-        !amenities.every((a) => property.amenities.includes(a))
-      )
+      if (operations.length && !operations.includes(property.operation))
         return false;
       if (min !== undefined && property.price < min) return false;
       if (max !== undefined && property.price > max) return false;
       return true;
     });
-  }, [zones, types, transactions, amenities, min, max]);
+  }, [all, zones, types, operations, min, max]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -64,8 +64,7 @@ export default function CatalogView() {
   function clearFilters() {
     setZones([]);
     setTypes([]);
-    setTransactions([]);
-    setAmenities([]);
+    setOperations([]);
     setMinPrice("");
     setMaxPrice("");
     setPage(1);
@@ -74,8 +73,7 @@ export default function CatalogView() {
   const hasFilters =
     zones.length > 0 ||
     types.length > 0 ||
-    transactions.length > 0 ||
-    amenities.length > 0 ||
+    operations.length > 0 ||
     Boolean(minPrice) ||
     Boolean(maxPrice);
 
@@ -87,10 +85,13 @@ export default function CatalogView() {
           Nuestra Colección
         </h1>
         <p className="text-foreground/50 text-sm md:text-base">
-          {filtered.length}{" "}
-          {filtered.length === 1
-            ? "propiedad encontrada"
-            : "propiedades encontradas"}
+          {all === null
+            ? "Cargando…"
+            : `${filtered.length} ${
+                filtered.length === 1
+                  ? "propiedad encontrada"
+                  : "propiedades encontradas"
+              }`}
         </p>
       </div>
 
@@ -124,15 +125,13 @@ export default function CatalogView() {
               ))}
             </FilterGroup>
 
-            <FilterGroup title="Tipo de transacción">
-              {TRANSACTION_TYPES.map((transaction) => (
+            <FilterGroup title="Operación">
+              {OPERATION_TYPES.map((operation) => (
                 <Checkbox
-                  key={transaction}
-                  label={transaction}
-                  checked={transactions.includes(transaction)}
-                  onChange={() =>
-                    toggle(transactions, transaction, setTransactions)
-                  }
+                  key={operation}
+                  label={operation}
+                  checked={operations.includes(operation)}
+                  onChange={() => toggle(operations, operation, setOperations)}
                 />
               ))}
             </FilterGroup>
@@ -175,23 +174,17 @@ export default function CatalogView() {
                 />
               </div>
             </FilterGroup>
-
-            <FilterGroup title="Comodidades">
-              {AMENITIES.map((amenity) => (
-                <Checkbox
-                  key={amenity}
-                  label={amenity}
-                  checked={amenities.includes(amenity)}
-                  onChange={() => toggle(amenities, amenity, setAmenities)}
-                />
-              ))}
-            </FilterGroup>
           </div>
         </aside>
 
         {/* Results */}
         <div className="lg:col-span-8">
-          {results.length > 0 ? (
+          {all === null ? (
+            <div className="flex items-center gap-2 text-foreground/40 text-sm py-24">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Cargando propiedades…
+            </div>
+          ) : results.length > 0 ? (
             <div
               key={`${currentPage}-${filtered.length}`}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10"

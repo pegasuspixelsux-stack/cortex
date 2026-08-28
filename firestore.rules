@@ -81,6 +81,7 @@ service cloud.firestore {
         && (!('baths' in data) || data.baths is number)
         && data.images is list
         && data.images.size() <= 12
+        && (!('featured' in data) || data.featured is bool)
         && data.status in ['Publicada', 'Borrador'];
     }
 

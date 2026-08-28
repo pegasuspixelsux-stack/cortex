@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Loader2, Search, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
 import {
   listProperties,
   deleteProperty,
   type AdminProperty,
   type AdminPropertyStatus,
 } from "@/lib/admin/properties";
-import { seedSampleProperties } from "@/lib/admin/seedProperties";
 
 const STATUS_FILTERS: Array<AdminPropertyStatus | "Todas"> = [
   "Todas",
@@ -39,7 +38,6 @@ export default function AdminPropertiesPage() {
   const [statusFilter, setStatusFilter] =
     useState<(typeof STATUS_FILTERS)[number]>("Todas");
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [seeding, setSeeding] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -66,19 +64,6 @@ export default function AdminPropertiesPage() {
       setError("No se pudo eliminar la propiedad.");
     } finally {
       setDeletingId(null);
-    }
-  }
-
-  async function handleSeed() {
-    setSeeding(true);
-    setError(null);
-    try {
-      const { created, skipped } = await seedSampleProperties();
-      if (!skipped && created > 0) await load();
-    } catch {
-      setError("No se pudo cargar el catálogo de ejemplo.");
-    } finally {
-      setSeeding(false);
     }
   }
 
@@ -151,22 +136,13 @@ export default function AdminPropertiesPage() {
           <p className="text-foreground/50 text-sm">
             Todavía no hay propiedades en Firestore.
           </p>
-          <button
-            onClick={handleSeed}
-            disabled={seeding}
-            className="inline-flex items-center gap-2 border border-foreground/15 hover:border-terracotta text-foreground/70 text-sm px-5 py-2.5 rounded-full transition-colors disabled:opacity-50"
+          <Link
+            href="/admin/properties/new"
+            className="inline-flex items-center gap-2 border border-foreground/15 hover:border-terracotta text-foreground/70 text-sm px-5 py-2.5 rounded-full transition-colors"
           >
-            {seeding ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
-            {seeding ? "Cargando 24 propiedades…" : "Cargar catálogo de ejemplo (24)"}
-          </button>
-          <p className="text-foreground/35 text-xs max-w-xs">
-            Trae el catálogo mock del sitio a Firestore. Después editás o
-            eliminás cada una desde acá.
-          </p>
+            <Plus className="w-4 h-4" />
+            Crear la primera propiedad
+          </Link>
         </div>
       ) : filtered.length === 0 ? (
         <div className="py-16 text-center text-foreground/50 border border-dashed border-foreground/15 rounded-sm text-sm">

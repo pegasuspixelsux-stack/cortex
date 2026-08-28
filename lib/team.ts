@@ -55,8 +55,3 @@ export const TEAM: TeamMember[] = [
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&q=80&auto=format&fit=crop",
   },
 ];
-
-/** Deterministically assigns an agent to a property id. */
-export function getAgentForProperty(propertyId: number): TeamMember {
-  return TEAM[propertyId % TEAM.length];
-}

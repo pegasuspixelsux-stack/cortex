@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 export const metadata: Metadata = {
   title: "Nuestra Colección | Cortex",
   description:
-    "Explorá el catálogo completo de propiedades de Cortex en Punta del Este: filtrá por zona, tipo de transacción, tipo de propiedad, precio y comodidades.",
+    "Explorá el catálogo completo de propiedades de Cortex en Punta del Este: filtrá por zona, operación, tipo de propiedad y precio.",
 };
 
 export default function PropiedadesPage() {

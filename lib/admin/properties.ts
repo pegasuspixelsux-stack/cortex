@@ -63,6 +63,8 @@ export interface AdminProperty {
   baths?: number;
   images: string[];
   agentName?: string;
+  /** Surfaced in the homepage "Propiedades Seleccionadas" section. */
+  featured?: boolean;
   status: AdminPropertyStatus;
   createdAt: Timestamp | null;
 }
@@ -117,8 +119,8 @@ export async function deleteProperty(id: string): Promise<void> {
 // text lines from a selected property. Kept here so the formatting lives
 // next to the data model.
 
-/** Bathroom count: the stored value, or the same estimate the public site
- *  uses (lib/properties.ts:getPropertyBaths) when none was entered. */
+/** Bathroom count: the stored value, or a ~0.75-per-bedroom estimate when
+ *  none was entered. */
 export function estimateBaths(p: Pick<AdminProperty, "beds" | "baths">): number {
   if (typeof p.baths === "number" && p.baths > 0) return p.baths;
   return p.beds > 0 ? Math.max(1, Math.round(p.beds * 0.75)) : 0;

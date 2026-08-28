@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { PROPERTIES, type Property } from "@/lib/properties";
+import { ArrowRight, Loader2 } from "lucide-react";
+import {
+  listPublicProperties,
+  type PublicProperty,
+} from "@/lib/publicProperties";
 import PropertyCard from "@/components/PropertyCard";
 
-const FEATURED = PROPERTIES.filter((property) => property.featured);
-
 const PAGE_SIZE = 8;
-const TOTAL_PAGES = Math.ceil(FEATURED.length / PAGE_SIZE);
 
 // Visual-weight rhythm per page: a featured pair (6-6) followed by
 // balanced trios (4-4-4) on a 12-column grid — always sums to 12/row.
@@ -18,11 +18,27 @@ const SPANS_PAGE_1 = [6, 6, 4, 4, 4, 4, 4, 4];
 const SPANS_PAGE_2 = [6, 6, 6, 6];
 
 export default function FeaturedProperties() {
+  const [all, setAll] = useState<PublicProperty[] | null>(null);
   const [page, setPage] = useState(1);
 
-  const start = (page - 1) * PAGE_SIZE;
-  const listings = FEATURED.slice(start, start + PAGE_SIZE);
-  const spans = page === 1 ? SPANS_PAGE_1 : SPANS_PAGE_2;
+  useEffect(() => {
+    listPublicProperties()
+      .then(setAll)
+      .catch(() => setAll([]));
+  }, []);
+
+  // Prefer the ones an agent flagged; fall back to the newest published.
+  const featured = useMemo(() => {
+    if (!all) return [];
+    const flagged = all.filter((p) => p.featured);
+    return (flagged.length ? flagged : all).slice(0, 24);
+  }, [all]);
+
+  const totalPages = Math.max(1, Math.ceil(featured.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const listings = featured.slice(start, start + PAGE_SIZE);
+  const spans = currentPage === 1 ? SPANS_PAGE_1 : SPANS_PAGE_2;
 
   return (
     <section id="propiedades" className="w-full bg-background scroll-mt-24">
@@ -37,47 +53,64 @@ export default function FeaturedProperties() {
           </h2>
         </div>
 
-        {/* Grid */}
-        <div
-          key={page}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10"
-        >
-          {listings.map((property, index) => (
-            <FeaturedCard
-              key={property.id}
-              property={property}
-              index={index}
-              lgSpan={spans[index] ?? 4}
-            />
-          ))}
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-16 md:mt-20 pt-8 border-t border-foreground/10">
-          <p className="text-sm text-foreground/50">
-            Mostrando {start + 1}–{start + listings.length} de{" "}
-            {FEATURED.length} propiedades
-          </p>
-
-          <div className="flex items-center gap-2">
-            {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map(
-              (pageNumber) => (
-                <button
-                  key={pageNumber}
-                  onClick={() => setPage(pageNumber)}
-                  aria-current={pageNumber === page ? "page" : undefined}
-                  className={`h-10 w-10 rounded-full text-sm transition-colors border ${
-                    pageNumber === page
-                      ? "bg-terracotta text-white border-terracotta"
-                      : "border-foreground/15 text-foreground/60 hover:border-terracotta/60 hover:text-foreground"
-                  }`}
-                >
-                  {String(pageNumber).padStart(2, "0")}
-                </button>
-              ),
-            )}
+        {all === null ? (
+          <div className="flex items-center gap-2 text-foreground/40 text-sm py-16">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Cargando propiedades…
           </div>
-        </div>
+        ) : featured.length === 0 ? (
+          <div className="py-16 text-center text-foreground/50 border border-dashed border-foreground/15 rounded-sm text-sm">
+            Todavía no hay propiedades publicadas.
+          </div>
+        ) : (
+          <>
+            {/* Grid */}
+            <div
+              key={currentPage}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10"
+            >
+              {listings.map((property, index) => (
+                <FeaturedCard
+                  key={property.id}
+                  property={property}
+                  index={index}
+                  lgSpan={spans[index] ?? 4}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-16 md:mt-20 pt-8 border-t border-foreground/10">
+              <p className="text-sm text-foreground/50">
+                Mostrando {start + 1}–{start + listings.length} de{" "}
+                {featured.length} propiedades
+              </p>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setPage(pageNumber)}
+                        aria-current={
+                          pageNumber === currentPage ? "page" : undefined
+                        }
+                        className={`h-10 w-10 rounded-full text-sm transition-colors border ${
+                          pageNumber === currentPage
+                            ? "bg-terracotta text-white border-terracotta"
+                            : "border-foreground/15 text-foreground/60 hover:border-terracotta/60 hover:text-foreground"
+                        }`}
+                      >
+                        {String(pageNumber).padStart(2, "0")}
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Catalog CTA */}
         <div className="flex justify-center mt-14 md:mt-16">
@@ -101,7 +134,7 @@ function FeaturedCard({
   index,
   lgSpan,
 }: {
-  property: Property;
+  property: PublicProperty;
   index: number;
   lgSpan: number;
 }) {

@@ -46,6 +46,7 @@ export default function PropertyForm({
   const [status, setStatus] = useState<AdminPropertyStatus>(
     initialValues?.status ?? "Publicada",
   );
+  const [featured, setFeatured] = useState(initialValues?.featured ?? false);
   const [operation, setOperation] = useState<OperationType>(
     initialValues?.operation ?? "Venta",
   );
@@ -79,6 +80,7 @@ export default function PropertyForm({
       baths: Number(baths) || 0,
       images,
       description,
+      featured,
       status,
     };
 
@@ -251,6 +253,16 @@ export default function PropertyForm({
           className={`${inputClass} resize-none`}
         />
       </Field>
+
+      <label className="flex items-center gap-2.5 text-sm text-foreground/70 cursor-pointer w-fit">
+        <input
+          type="checkbox"
+          checked={featured}
+          onChange={(e) => setFeatured(e.target.checked)}
+          className="accent-terracotta"
+        />
+        Destacar en la portada (Propiedades Seleccionadas)
+      </label>
 
       {error && <p className="text-danger text-sm">{error}</p>}
 
