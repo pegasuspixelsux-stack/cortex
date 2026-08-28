@@ -17,6 +17,8 @@ import {
   ArrowRight,
   Check,
 } from "lucide-react";
+import DevelopmentsSection from "@/components/DevelopmentsSection";
+import { MODEL_DEVELOPMENTS } from "@/lib/developments";
 
 const PILLARS = [
   {
@@ -63,39 +65,6 @@ const ADVANTAGES = [
     title: "Gestión de punta a punta",
     description:
       "Desde la identificación de la oportunidad hasta la administración del activo o su reventa.",
-  },
-];
-
-const PROJECTS = [
-  {
-    title: "Torre Marena",
-    subtitle: "Inversión en Pozo",
-    zone: "Península, Punta del Este",
-    assetType: "Edificio residencial",
-    returnLabel: "Retorno proyectado",
-    returnValue: "+22% en pozo",
-    image:
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1000&q=80&auto=format&fit=crop",
-  },
-  {
-    title: "Chacras del Este",
-    subtitle: "Fraccionamiento",
-    zone: "José Ignacio, Maldonado",
-    assetType: "Tierra / chacras",
-    returnLabel: "Plusvalía estimada",
-    returnValue: "+15% anual",
-    image:
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1000&q=80&auto=format&fit=crop",
-  },
-  {
-    title: "Residencial Brava",
-    subtitle: "Edificio Boutique",
-    zone: "Playa Brava, Punta del Este",
-    assetType: "Apartamentos",
-    returnLabel: "Renta anual estimada",
-    returnValue: "6–8% en USD",
-    image:
-      "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1000&q=80&auto=format&fit=crop",
   },
 ];
 
@@ -247,71 +216,17 @@ export default function InversionesView() {
         </div>
       </section>
 
-      {/* Featured investment projects */}
-      <section className="w-full bg-background">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-20 md:py-28">
-          <div className="flex flex-col gap-2 mb-14">
-            <span className="text-terracotta-hover text-xs md:text-sm tracking-[0.3em] uppercase font-medium">
-              Casos modelo
-            </span>
-            <h2 className="font-serif text-3xl md:text-4xl font-light tracking-tight text-foreground">
-              Desarrollos destacados para inversores
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {PROJECTS.map((project, index) => (
-              <motion.div
-                key={project.title}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.6, delay: index * 0.12, ease: "easeOut" }}
-                className="group flex flex-col gap-4"
-              >
-                <div className="relative w-full aspect-[4/5] overflow-hidden rounded-sm">
-                  <Image
-                    src={project.image}
-                    alt={project.title}
-                    fill
-                    sizes="(min-width: 768px) 33vw, 100vw"
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                  />
-                  <span className="absolute top-4 left-4 text-xs tracking-[0.2em] uppercase bg-background/85 backdrop-blur-sm text-foreground/80 px-3 py-1.5 rounded-full">
-                    {project.zone}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-col gap-0.5">
-                    <h3 className="font-serif text-xl font-light text-foreground">
-                      {project.title}
-                    </h3>
-                    <span className="text-terracotta-hover text-xs uppercase tracking-[0.15em]">
-                      {project.subtitle}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-foreground/10 text-sm">
-                    <span className="text-foreground/50">
-                      {project.assetType}
-                    </span>
-                    <span className="text-foreground font-medium">
-                      {project.returnValue}
-                    </span>
-                  </div>
-                  <span className="text-foreground/40 text-xs">
-                    {project.returnLabel}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Featured investment projects — shared with /desarrollos */}
+      <DevelopmentsSection
+        developments={MODEL_DEVELOPMENTS}
+        cta={{
+          href: "/desarrollos",
+          label: "Ver los 6 desarrollos en preventa",
+        }}
+      />
 
       {/* Investor CTA */}
-      <section className="w-full bg-ink">
+      <section id="contacto" className="w-full bg-ink scroll-mt-24">
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 py-20 md:py-28">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
             <motion.div

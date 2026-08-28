@@ -16,6 +16,7 @@ import { digits } from "@/lib/siteSettings";
 const QUICK_LINKS = [
   { label: "Propiedades", href: "/#propiedades" },
   { label: "Colección", href: "/propiedades" },
+  { label: "Desarrollos", href: "/desarrollos" },
   { label: "Inversiones", href: "/inversiones" },
   { label: "Nosotros", href: "/nosotros" },
   { label: "Contacto", href: "/#contacto" },
