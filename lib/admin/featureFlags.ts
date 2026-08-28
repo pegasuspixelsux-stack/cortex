@@ -24,7 +24,9 @@ export interface FeatureFlags {
 }
 
 export const DEFAULT_FLAGS: FeatureFlags = {
-  reelGenerator: true,
+  // Off until a super_admin turns it on in Configuración — hidden from the
+  // rest of the team by default.
+  reelGenerator: false,
   leadWidget: true,
   driveImport: false,
 };

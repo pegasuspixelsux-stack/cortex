@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Player } from "@remotion/player";
 import {
   DndContext,
@@ -50,6 +51,7 @@ import {
   type TextLine,
 } from "@/remotion/constants";
 import { useAdminAuth } from "@/lib/admin/useAdminAuth";
+import { useAdminRole } from "@/lib/admin/useAdminRole";
 import { useFeatureFlags } from "@/lib/admin/featureFlags";
 import { useSiteSettings } from "@/lib/useSiteSettings";
 import ContentPresetPanel from "@/components/admin/ContentPresetPanel";
@@ -63,8 +65,12 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "reel";
 
 export default function AdminContentPage() {
+  const router = useRouter();
   const { user } = useAdminAuth();
+  const { isSuperAdmin, loading: roleLoading } = useAdminRole();
   const { reelGenerator } = useFeatureFlags();
+  // Off for the team, on for a super_admin who is previewing it.
+  const contentEnabled = reelGenerator || isSuperAdmin;
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [reel, setReel] = useState<PropertyReelProps>(DEFAULT_REEL_PROPS);
   const [poolId, setPoolId] = useState<string | null>(null);
@@ -78,6 +84,12 @@ export default function AdminContentPage() {
   );
 
   const site = useSiteSettings();
+
+  // Non-super_admin users can't reach this page while the module is off —
+  // bounce them out rather than showing a placeholder.
+  useEffect(() => {
+    if (!roleLoading && !contentEnabled) router.replace("/admin");
+  }, [roleLoading, contentEnabled, router]);
 
   useEffect(() => {
     listProperties().then(setProperties).catch(() => setProperties([]));
@@ -229,16 +241,9 @@ export default function AdminContentPage() {
     }
   }
 
-  if (!reelGenerator) {
-    return (
-      <div className="max-w-md py-8 text-sm text-foreground/55">
-        <h1 className="mb-2 font-serif text-2xl font-light text-foreground">
-          Módulo desactivado
-        </h1>
-        El generador de reels está desactivado por configuración. Un super
-        admin puede reactivarlo en Configuración → Feature flags.
-      </div>
-    );
+  if (!contentEnabled) {
+    // Redirecting (non-super_admin, module off) — render nothing.
+    return null;
   }
 
   return (
@@ -250,6 +255,12 @@ export default function AdminContentPage() {
         <p className="text-foreground/50 text-sm">
           Armá un video de la propiedad para redes y descargalo en MP4.
         </p>
+        {!reelGenerator && isSuperAdmin && (
+          <p className="mt-2 inline-flex w-fit items-center gap-2 rounded-full border border-terracotta/30 bg-terracotta/5 px-3 py-1 text-xs text-terracotta">
+            Desactivado para el equipo · solo vos lo ves. Activalo en
+            Configuración → Feature flags.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-10 items-start">

@@ -26,7 +26,11 @@ interface NavItem {
   href: string;
   icon: typeof LayoutDashboard;
   /** Hidden unless this returns true. Defaults to always-visible. */
-  show?: (ctx: { canManageUsers: boolean; flags: FeatureFlags }) => boolean;
+  show?: (ctx: {
+    canManageUsers: boolean;
+    isSuperAdmin: boolean;
+    flags: FeatureFlags;
+  }) => boolean;
 }
 
 const TOP_ITEMS: NavItem[] = [
@@ -36,7 +40,9 @@ const TOP_ITEMS: NavItem[] = [
     label: "Contenido",
     href: "/admin/content",
     icon: Film,
-    show: ({ flags }) => flags.reelGenerator,
+    // Off by default for the team; a super_admin flips it in Configuración
+    // and can always reach it themselves to preview.
+    show: ({ flags, isSuperAdmin }) => flags.reelGenerator || isSuperAdmin,
   },
   { label: "Leads", href: "/admin/leads", icon: Inbox },
   {
@@ -68,13 +74,14 @@ function BrandMark() {
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { canManageUsers } = useAdminRole();
+  const { canManageUsers, isSuperAdmin } = useAdminRole();
   const flags = useFeatureFlags();
   const [open, setOpen] = useState(false);
   const closeDrawer = () => setOpen(false);
 
   const navItems = TOP_ITEMS.filter(
-    (item) => !item.show || item.show({ canManageUsers, flags }),
+    (item) =>
+      !item.show || item.show({ canManageUsers, isSuperAdmin, flags }),
   );
 
   // While the drawer is open on mobile, lock body scroll and let Escape close it.
