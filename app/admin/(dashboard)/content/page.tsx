@@ -44,6 +44,7 @@ import {
   type TextLine,
 } from "@/remotion/constants";
 import { useAdminAuth } from "@/lib/admin/useAdminAuth";
+import { useFeatureFlags } from "@/lib/admin/featureFlags";
 import ContentPresetPanel from "@/components/admin/ContentPresetPanel";
 import { applyConfig } from "@/lib/admin/contentPresets";
 
@@ -56,6 +57,7 @@ const slug = (s: string) =>
 
 export default function AdminContentPage() {
   const { user } = useAdminAuth();
+  const { reelGenerator } = useFeatureFlags();
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [reel, setReel] = useState<PropertyReelProps>(DEFAULT_REEL_PROPS);
   const [rendering, setRendering] = useState(false);
@@ -174,6 +176,18 @@ export default function AdminContentPage() {
     } finally {
       setRendering(false);
     }
+  }
+
+  if (!reelGenerator) {
+    return (
+      <div className="max-w-md py-8 text-sm text-foreground/55">
+        <h1 className="mb-2 font-serif text-2xl font-light text-foreground">
+          Módulo desactivado
+        </h1>
+        El generador de reels está desactivado por configuración. Un super
+        admin puede reactivarlo en Configuración → Feature flags.
+      </div>
+    );
   }
 
   return (

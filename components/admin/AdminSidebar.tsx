@@ -18,13 +18,33 @@ import {
   X,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
+import { useAdminRole } from "@/lib/admin/useAdminRole";
+import { useFeatureFlags, type FeatureFlags } from "@/lib/admin/featureFlags";
 
-const TOP_ITEMS = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  /** Hidden unless this returns true. Defaults to always-visible. */
+  show?: (ctx: { canManageUsers: boolean; flags: FeatureFlags }) => boolean;
+}
+
+const TOP_ITEMS: NavItem[] = [
   { label: "Panel de Control", href: "/admin", icon: LayoutDashboard },
   { label: "Propiedades", href: "/admin/properties", icon: Building2 },
-  { label: "Contenido", href: "/admin/content", icon: Film },
+  {
+    label: "Contenido",
+    href: "/admin/content",
+    icon: Film,
+    show: ({ flags }) => flags.reelGenerator,
+  },
   { label: "Leads", href: "/admin/leads", icon: Inbox },
-  { label: "Usuarios", href: "/admin/users", icon: Users },
+  {
+    label: "Usuarios",
+    href: "/admin/users",
+    icon: Users,
+    show: ({ canManageUsers }) => canManageUsers,
+  },
 ];
 
 function BrandMark() {
@@ -48,8 +68,14 @@ function BrandMark() {
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { canManageUsers } = useAdminRole();
+  const flags = useFeatureFlags();
   const [open, setOpen] = useState(false);
   const closeDrawer = () => setOpen(false);
+
+  const navItems = TOP_ITEMS.filter(
+    (item) => !item.show || item.show({ canManageUsers, flags }),
+  );
 
   // While the drawer is open on mobile, lock body scroll and let Escape close it.
   useEffect(() => {
@@ -146,7 +172,7 @@ export default function AdminSidebar() {
           </div>
 
           <nav className="flex flex-col gap-1">
-            {TOP_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

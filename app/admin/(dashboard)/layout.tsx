@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import { isFirebaseConfigured } from "@/lib/firebase";
-import { useAdminAuth } from "@/lib/admin/useAdminAuth";
+import { signOut } from "firebase/auth";
+import { Loader2, ShieldAlert } from "lucide-react";
+import { auth, isFirebaseConfigured } from "@/lib/firebase";
+import { useAdminRole } from "@/lib/admin/useAdminRole";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import FirebaseNotice from "@/components/admin/FirebaseNotice";
 
@@ -14,7 +15,7 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, loading } = useAdminAuth();
+  const { user, role, loading } = useAdminRole();
 
   useEffect(() => {
     if (isFirebaseConfigured && !loading && !user) {
@@ -40,6 +41,34 @@ export default function AdminDashboardLayout({
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-background text-foreground/40">
         <Loader2 className="w-5 h-5 animate-spin" />
+      </div>
+    );
+  }
+
+  // Signed in, but no role profile — not an invited member. Don't leak
+  // any of the dashboard; offer a way out.
+  if (!role) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-background px-6">
+        <div className="flex max-w-sm flex-col items-center gap-4 text-center">
+          <ShieldAlert className="h-8 w-8 text-danger" />
+          <h1 className="font-serif text-xl font-light text-foreground">
+            Sin acceso
+          </h1>
+          <p className="text-sm text-foreground/55">
+            Tu cuenta no tiene un rol asignado en Cortex. Pedile a un
+            administrador o manager que te invite al equipo.
+          </p>
+          <button
+            onClick={async () => {
+              if (auth) await signOut(auth);
+              router.replace("/admin/login");
+            }}
+            className="mt-1 rounded-full border border-foreground/15 px-5 py-2 text-sm text-foreground/70 transition-colors hover:border-terracotta"
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </div>
     );
   }

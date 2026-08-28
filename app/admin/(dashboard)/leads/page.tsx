@@ -31,7 +31,7 @@ export default function AdminLeadsPage() {
   useEffect(() => {
     if (!isManager) return;
     listUsers()
-      .then((u) => setAgents(u.filter((x) => x.role !== "viewer")))
+      .then(setAgents)
       .catch(() => setAgents([]));
   }, [isManager]);
 

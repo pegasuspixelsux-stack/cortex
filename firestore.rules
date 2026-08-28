@@ -4,20 +4,25 @@ rules_version = '2';
 // firebase.json / .firebaserc). Keep this file as the source of truth —
 // do not hand-edit rules in the Firebase console.
 //
-// Model: every signed-in user has a matching users/{uid} doc with a
-// `role` field ("admin" | "editor" | "viewer").
+// RBAC model: every signed-in user has a matching users/{uid} doc with a
+// `role` field. Ranks: super_admin 4 > admin 3 > manager 2 > agent 1.
 //
 //   properties  — world-readable (the public marketing site can read the
 //                 catalog directly); create/update/delete restricted to
-//                 admin or editor, with light shape validation.
-//   users       — a user may read their own profile; only admins may list
-//                 the directory or create/update/delete profiles.
+//                 manager or above, with light shape validation.
+//   users       — a user reads their own profile; manager+ read/list the
+//                 directory (super_admin docs excluded); creating/editing
+//                 a member requires strictly outranking the target role,
+//                 and admin/super_admin roles are never minted here.
 //   leads       — created by anonymous visitors via the "Agente" widget
-//                 (shape-validated, server timestamp, status forced to
-//                 "nuevo"); only admin/editor can read or advance them.
+//                 (shape-validated, server timestamp, stage forced to
+//                 "nuevo"); only manager+ can read or advance them.
+//   settings    — settings/site is public-read / manager+-write; the
+//                 settings/features flag doc is super_admin-write only.
 //
-// "Zonas" on the public site are static config (lib/properties.ts:ZONES),
-// not a Firestore collection, so they need no rules here.
+// super_admin bootstrap: create the first one by hand in the Firebase
+// Console (Firestore -> users/{uid} -> role: "super_admin"). No client
+// path can grant that role.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -37,12 +42,29 @@ service cloud.firestore {
       return signedIn() ? roleOf(request.auth.uid) : null;
     }
 
-    function isAdmin() {
-      return myRole() == 'admin';
+    function rank(role) {
+      return role == 'super_admin' ? 4
+        : role == 'admin' ? 3
+        : role == 'manager' ? 2
+        : role == 'agent' ? 1
+        : 0;
     }
 
-    function isEditorOrAdmin() {
-      return myRole() == 'admin' || myRole() == 'editor';
+    function myRank() {
+      return rank(myRole());
+    }
+
+    function isSuperAdmin() {
+      return myRole() == 'super_admin';
+    }
+
+    function isAdmin() {
+      return myRank() >= 3;
+    }
+
+    // manager or above — the write tier for catalog/leads/site settings.
+    function canManageContent() {
+      return myRank() >= 2;
     }
 
     // ---- properties -------------------------------------------------
@@ -62,15 +84,42 @@ service cloud.firestore {
 
     match /properties/{propertyId} {
       allow read: if true;
-      allow create, update: if isEditorOrAdmin()
+      allow create, update: if canManageContent()
         && isValidProperty(request.resource.data);
-      allow delete: if isEditorOrAdmin();
+      allow delete: if canManageContent();
     }
 
-    // ---- users ------------------------------------------------------
+    // ---- users (RBAC hierarchy) -----------------------------------
     match /users/{userId} {
-      allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
-      allow create, update, delete: if isAdmin();
+      // A member reads their own profile. manager+ may read any other
+      // profile except a super_admin's.
+      allow get: if isSuperAdmin()
+        || (signedIn() && request.auth.uid == userId)
+        || (myRank() >= 2 && resource.data.role != 'super_admin');
+
+      // Directory listing: manager+, and never over super_admin docs —
+      // the client query filters `role in [admin, manager, agent]`, so a
+      // super_admin is never even a candidate document here.
+      allow list: if myRank() >= 2 && resource.data.role != 'super_admin';
+
+      // Invite a member: only manager/agent roles, and the inviter must
+      // strictly outrank the new role. (manager > agent only; admin >
+      // manager, agent. Nobody mints admin or super_admin from here.)
+      allow create: if request.resource.data.role in ['manager', 'agent']
+        && myRank() > rank(request.resource.data.role)
+        && request.resource.data.name is string
+        && request.resource.data.email is string;
+
+      // Edit a member (role change / profile): can't touch a super_admin,
+      // must outrank both the current and the target role, target stays
+      // within manager/agent.
+      allow update: if resource.data.role != 'super_admin'
+        && request.resource.data.role in ['manager', 'agent']
+        && myRank() > rank(resource.data.role)
+        && myRank() > rank(request.resource.data.role);
+
+      allow delete: if resource.data.role != 'super_admin'
+        && myRank() > rank(resource.data.role);
 
       // Each agent's saved reel-styling presets — private to them.
       match /contentPresets/{presetId} {
@@ -93,13 +142,13 @@ service cloud.firestore {
 
     match /leads/{leadId} {
       allow create: if isValidLead(request.resource.data);
-      allow read, update: if isEditorOrAdmin();
+      allow read, update: if canManageContent();
       allow delete: if isAdmin();
 
       // Activity log — append-only, author must be the caller.
       match /notes/{noteId} {
-        allow read: if isEditorOrAdmin();
-        allow create: if isEditorOrAdmin()
+        allow read: if canManageContent();
+        allow create: if canManageContent()
           && request.resource.data.authorUid == request.auth.uid
           && request.resource.data.body is string
           && request.resource.data.body.size() > 0
@@ -108,10 +157,12 @@ service cloud.firestore {
       }
     }
 
-    // ---- site settings (public logo, etc.) -----------------------
+    // ---- site settings ------------------------------------------------
+    // settings/site  — public logo etc., manager+ write.
+    // settings/features — global feature flags, super_admin write only.
     match /settings/{docId} {
       allow read: if true;
-      allow write: if isEditorOrAdmin();
+      allow write: if docId == 'features' ? isSuperAdmin() : canManageContent();
     }
 
     // ---- everything else: explicit deny ---------------------------

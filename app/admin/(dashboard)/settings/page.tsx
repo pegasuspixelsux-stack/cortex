@@ -11,6 +11,14 @@ import {
   type SiteSettings,
 } from "@/lib/siteSettings";
 import { uploadImage } from "@/lib/admin/storage";
+import { useAdminRole } from "@/lib/admin/useAdminRole";
+import {
+  subscribeFeatureFlags,
+  updateFeatureFlags,
+  FLAG_LABELS,
+  DEFAULT_FLAGS,
+  type FeatureFlags,
+} from "@/lib/admin/featureFlags";
 import SiteLogo from "@/components/SiteLogo";
 
 const field =
@@ -70,7 +78,7 @@ export default function AdminSettingsPage() {
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
     } catch {
-      setError("No se pudo guardar. ¿Tenés permisos de editor/admin?");
+      setError("No se pudo guardar. ¿Tenés permisos suficientes?");
     } finally {
       setSaving(false);
     }
@@ -82,6 +90,8 @@ export default function AdminSettingsPage() {
     logoFont,
     logoSize,
   };
+
+  const { isSuperAdmin } = useAdminRole();
 
   return (
     <div className="flex flex-col gap-8 max-w-2xl">
@@ -228,6 +238,79 @@ export default function AdminSettingsPage() {
       <p className="text-xs text-foreground/35">
         En vivo ahora: {settings.logoUrl ? "imagen" : "texto"} · {settings.logoText}
       </p>
+
+      {isSuperAdmin && <FeatureFlagsCard />}
     </div>
+  );
+}
+
+function FeatureFlagsCard() {
+  const [flags, setFlags] = useState<FeatureFlags>(DEFAULT_FLAGS);
+  const [busy, setBusy] = useState<keyof FeatureFlags | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => subscribeFeatureFlags(setFlags), []);
+
+  async function toggle(key: keyof FeatureFlags) {
+    setBusy(key);
+    setError(null);
+    const next = !flags[key];
+    setFlags((f) => ({ ...f, [key]: next }));
+    try {
+      await updateFeatureFlags({ [key]: next });
+    } catch {
+      setFlags((f) => ({ ...f, [key]: !next }));
+      setError("No se pudo guardar el cambio.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-5 rounded-sm border border-terracotta/25 p-6">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-sm font-medium text-foreground">
+          Feature flags
+          <span className="ml-2 text-[10px] uppercase tracking-[0.12em] text-terracotta">
+            Super Admin
+          </span>
+        </h2>
+        <p className="text-xs text-foreground/45">
+          Activá o desactivá módulos globalmente. Los cambios se aplican en
+          vivo para todo el equipo.
+        </p>
+      </div>
+
+      <div className="flex flex-col divide-y divide-foreground/10">
+        {(Object.keys(FLAG_LABELS) as (keyof FeatureFlags)[]).map((key) => (
+          <div
+            key={key}
+            className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+          >
+            <span className="text-sm text-foreground/80">
+              {FLAG_LABELS[key]}
+            </span>
+            <button
+              type="button"
+              onClick={() => toggle(key)}
+              disabled={busy === key}
+              role="switch"
+              aria-checked={flags[key]}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                flags[key] ? "bg-terracotta" : "bg-foreground/20"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                  flags[key] ? "translate-x-[22px]" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {error && <p className="text-danger text-xs">{error}</p>}
+    </section>
   );
 }

@@ -29,6 +29,7 @@ import {
 } from "@/lib/leads";
 import ChoiceGroup from "@/components/agente/ChoiceGroup";
 import ClosingCard from "@/components/agente/ClosingCard";
+import { useFeatureFlags } from "@/lib/admin/featureFlags";
 
 const STORAGE_KEY = "cortex.agente.v1";
 
@@ -110,6 +111,7 @@ const inputClass =
 export default function AgenteConcierge() {
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+  const { leadWidget } = useFeatureFlags();
 
   const [saved] = useState(loadSaved);
   const [open, setOpen] = useState(false);
@@ -202,6 +204,7 @@ export default function AgenteConcierge() {
   }
 
   if (pathname?.startsWith("/admin")) return null;
+  if (!leadWidget) return null;
 
   const showClosing = phase === "done" || phase === "failed";
 

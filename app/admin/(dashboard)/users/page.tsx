@@ -2,25 +2,41 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Trash2, Loader2, X } from "lucide-react";
+import { Plus, Trash2, Loader2, X, RefreshCw, ShieldAlert } from "lucide-react";
 import {
   listUsers,
   createUser,
   updateUserRole,
   deleteUserProfile,
+  sendPasswordSetupEmail,
+  assignableRoles,
+  outranks,
   ROLE_LABELS,
   type AdminUser,
   type UserRole,
 } from "@/lib/admin/users";
+import { useAdminRole } from "@/lib/admin/useAdminRole";
 
 const inputClass =
   "w-full bg-transparent border-b border-foreground/15 focus:border-terracotta outline-none text-foreground placeholder:text-foreground/30 text-sm py-2.5 transition-colors";
 
+function randomPassword() {
+  const chars =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+  return Array.from(
+    { length: 14 },
+    () => chars[Math.floor(Math.random() * chars.length)],
+  ).join("");
+}
+
 export default function AdminUsersPage() {
+  const { role: myRole, canManageUsers, loading: roleLoading } = useAdminRole();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  const canAssign = assignableRoles(myRole);
 
   async function load() {
     setLoading(true);
@@ -35,8 +51,9 @@ export default function AdminUsersPage() {
   }
 
   useEffect(() => {
+    if (roleLoading || !canManageUsers) return;
     load();
-  }, []);
+  }, [roleLoading, canManageUsers]);
 
   async function handleRoleChange(uid: string, role: UserRole) {
     setUsers((prev) => prev.map((u) => (u.uid === uid ? { ...u, role } : u)));
@@ -57,6 +74,30 @@ export default function AdminUsersPage() {
     }
   }
 
+  if (roleLoading) {
+    return (
+      <div className="flex items-center gap-2 text-foreground/40 text-sm py-8">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Cargando...
+      </div>
+    );
+  }
+
+  if (!canManageUsers) {
+    return (
+      <div className="flex max-w-md flex-col items-start gap-3 py-8">
+        <ShieldAlert className="h-7 w-7 text-danger" />
+        <h1 className="font-serif text-2xl font-light text-foreground">
+          Sección restringida
+        </h1>
+        <p className="text-sm text-foreground/55">
+          La gestión de usuarios está disponible solo para managers y
+          administradores.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -73,7 +114,7 @@ export default function AdminUsersPage() {
           className="inline-flex items-center gap-2 bg-terracotta hover:bg-terracotta-hover text-white text-sm px-5 py-2.5 rounded-full transition-colors w-fit"
         >
           <Plus className="w-4 h-4" />
-          Agregar Usuario
+          Invitar Usuario
         </button>
       </div>
 
@@ -100,41 +141,61 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr
-                  key={user.uid}
-                  className="border-b border-foreground/5 last:border-b-0 hover:bg-foreground/[0.02]"
-                >
-                  <td className="px-5 py-4 text-foreground">{user.name}</td>
-                  <td className="px-5 py-4 text-foreground/60">{user.email}</td>
-                  <td className="px-5 py-4">
-                    <select
-                      value={user.role}
-                      onChange={(e) =>
-                        handleRoleChange(user.uid, e.target.value as UserRole)
-                      }
-                      className="bg-transparent text-foreground/80 text-sm border border-foreground/15 rounded-full px-3 py-1.5 outline-none focus:border-terracotta transition-colors"
-                    >
-                      {(Object.keys(ROLE_LABELS) as UserRole[]).map((role) => (
-                        <option key={role} value={role}>
-                          {ROLE_LABELS[role]}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center justify-end">
-                      <button
-                        onClick={() => handleDelete(user.uid)}
-                        className="text-foreground/50 hover:text-danger transition-colors"
-                        aria-label="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {users.map((user) => {
+                const editable = outranks(myRole, user.role);
+                return (
+                  <tr
+                    key={user.uid}
+                    className="border-b border-foreground/5 last:border-b-0 hover:bg-foreground/[0.02]"
+                  >
+                    <td className="px-5 py-4 text-foreground">{user.name}</td>
+                    <td className="px-5 py-4 text-foreground/60">{user.email}</td>
+                    <td className="px-5 py-4">
+                      {editable ? (
+                        <select
+                          value={user.role}
+                          onChange={(e) =>
+                            handleRoleChange(
+                              user.uid,
+                              e.target.value as UserRole,
+                            )
+                          }
+                          className="bg-transparent text-foreground/80 text-sm border border-foreground/15 rounded-full px-3 py-1.5 outline-none focus:border-terracotta transition-colors"
+                        >
+                          {/* keep the current value selectable even if it
+                              sits outside what this actor can newly assign */}
+                          {Array.from(
+                            new Set<UserRole>([user.role, ...canAssign]),
+                          ).map((r) => (
+                            <option key={r} value={r}>
+                              {ROLE_LABELS[r]}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-foreground/60 text-sm">
+                          {ROLE_LABELS[user.role]}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center justify-end">
+                        {editable ? (
+                          <button
+                            onClick={() => handleDelete(user.uid)}
+                            className="text-foreground/50 hover:text-danger transition-colors"
+                            aria-label="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <span className="text-foreground/25 text-xs">—</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -143,6 +204,7 @@ export default function AdminUsersPage() {
       <AnimatePresence>
         {modalOpen && (
           <AddUserModal
+            roleOptions={canAssign}
             onClose={() => setModalOpen(false)}
             onCreated={() => {
               setModalOpen(false);
@@ -156,16 +218,21 @@ export default function AdminUsersPage() {
 }
 
 function AddUserModal({
+  roleOptions,
   onClose,
   onCreated,
 }: {
+  roleOptions: UserRole[];
   onClose: () => void;
   onCreated: () => void;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [tempPassword, setTempPassword] = useState("");
-  const [role, setRole] = useState<UserRole>("editor");
+  const [tempPassword, setTempPassword] = useState(randomPassword);
+  const [role, setRole] = useState<UserRole>(
+    roleOptions[roleOptions.length - 1] ?? "agent",
+  );
+  const [sendEmail, setSendEmail] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -175,9 +242,21 @@ function AddUserModal({
     setError(null);
     try {
       await createUser({ name, email, tempPassword, role });
+      if (sendEmail) {
+        try {
+          await sendPasswordSetupEmail(email);
+        } catch {
+          // account exists — the invite still worked, just flag it
+          setError(
+            "Usuario creado, pero no se pudo enviar el email para configurar contraseña. Pasale la contraseña temporal.",
+          );
+        }
+      }
       onCreated();
     } catch {
-      setError("No se pudo crear el usuario. Verificá el email y la contraseña (mínimo 6 caracteres).");
+      setError(
+        "No se pudo crear el usuario. Verificá el email y la contraseña (mínimo 6 caracteres).",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -201,7 +280,7 @@ function AddUserModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="font-serif text-xl font-light text-foreground">
-            Agregar Usuario
+            Crear Nuevo Miembro
           </h2>
           <button
             onClick={onClose}
@@ -240,14 +319,24 @@ function AddUserModal({
             <label className="text-xs uppercase tracking-[0.12em] text-foreground/40">
               Contraseña temporal
             </label>
-            <input
-              required
-              type="password"
-              minLength={6}
-              value={tempPassword}
-              onChange={(e) => setTempPassword(e.target.value)}
-              className={inputClass}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                required
+                type="text"
+                minLength={6}
+                value={tempPassword}
+                onChange={(e) => setTempPassword(e.target.value)}
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={() => setTempPassword(randomPassword())}
+                className="shrink-0 text-foreground/40 hover:text-terracotta transition-colors"
+                aria-label="Generar otra"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-xs uppercase tracking-[0.12em] text-foreground/40">
@@ -258,13 +347,23 @@ function AddUserModal({
               onChange={(e) => setRole(e.target.value as UserRole)}
               className={inputClass}
             >
-              {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
+              {roleOptions.map((r) => (
                 <option key={r} value={r}>
                   {ROLE_LABELS[r]}
                 </option>
               ))}
             </select>
           </div>
+
+          <label className="flex items-start gap-2.5 text-xs text-foreground/60 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+              className="mt-0.5 accent-terracotta"
+            />
+            Enviar email para que configure su propia contraseña
+          </label>
 
           {error && <p className="text-danger text-xs">{error}</p>}
 
@@ -273,7 +372,7 @@ function AddUserModal({
             disabled={submitting}
             className="bg-terracotta hover:bg-terracotta-hover disabled:opacity-60 text-white text-sm px-6 py-3 rounded-full transition-colors mt-1"
           >
-            {submitting ? "Creando..." : "Crear usuario"}
+            {submitting ? "Creando..." : "Crear miembro"}
           </button>
         </form>
       </motion.div>
