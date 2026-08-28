@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useSiteSettings } from "@/lib/useSiteSettings";
 
 const container = {
   hidden: {},
@@ -15,6 +16,7 @@ const line = {
 };
 
 export default function About() {
+  const { nosotrosText } = useSiteSettings();
   return (
     <section className="w-full bg-navy px-6 md:px-12 py-28 md:py-40">
       <motion.div
@@ -33,13 +35,9 @@ export default function About() {
 
         <motion.p
           variants={line}
-          className="font-serif text-cream text-2xl md:text-3xl lg:text-4xl font-light leading-relaxed md:leading-relaxed"
+          className="font-serif text-cream text-2xl md:text-3xl lg:text-4xl font-light leading-relaxed md:leading-relaxed whitespace-pre-line"
         >
-          En Cortex, entendemos que una propiedad no es solo una transacción,
-          es el refugio definitivo y la inversión de una vida. Operamos en el
-          corazón de Punta del Este con un enfoque analítico, discreto y de
-          diseño superior, gestionando los activos inmobiliarios más selectos
-          de la costa atlántica.
+          {nosotrosText}
         </motion.p>
       </motion.div>
     </section>

@@ -11,42 +11,41 @@ import {
   ArrowRight,
   Check,
 } from "lucide-react";
-
-const CONTACT_DETAILS = [
-  {
-    icon: MapPin,
-    label: "Oficina Principal",
-    value: "Av. Roosevelt, Parada 5, Punta del Este, Uruguay",
-  },
-  {
-    icon: Phone,
-    label: "Teléfono",
-    value: "+598 42 00 0000",
-    href: "tel:+59842000000",
-  },
-  {
-    icon: MessageCircle,
-    label: "WhatsApp de Atención Directa",
-    value: "+598 99 000 000",
-    href: "https://wa.me/59899000000",
-  },
-  {
-    icon: Mail,
-    label: "Correo Electrónico",
-    value: "contacto@cortexrealestate.com",
-    href: "mailto:contacto@cortexrealestate.com",
-  },
-  {
-    icon: Clock,
-    label: "Horarios",
-    value: "Lunes a Viernes de 9:00 a 19:00 hs / Sábados con cita previa",
-  },
-];
+import { useSiteSettings } from "@/lib/useSiteSettings";
+import { digits } from "@/lib/siteSettings";
 
 const INTERESTS = ["Comprar", "Vender", "Inversión", "Alquiler de Temporada"];
 
 export default function ContactSection() {
+  const { phone, whatsapp, email, address } = useSiteSettings();
   const [submitted, setSubmitted] = useState(false);
+
+  const contactDetails = [
+    { icon: MapPin, label: "Oficina Principal", value: address },
+    {
+      icon: Phone,
+      label: "Teléfono",
+      value: phone,
+      href: `tel:+${digits(phone)}`,
+    },
+    {
+      icon: MessageCircle,
+      label: "WhatsApp de Atención Directa",
+      value: whatsapp,
+      href: `https://wa.me/${digits(whatsapp)}`,
+    },
+    {
+      icon: Mail,
+      label: "Correo Electrónico",
+      value: email,
+      href: `mailto:${email}`,
+    },
+    {
+      icon: Clock,
+      label: "Horarios",
+      value: "Lunes a Viernes de 9:00 a 19:00 hs / Sábados con cita previa",
+    },
+  ];
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,7 +81,7 @@ export default function ContactSection() {
             </div>
 
             <ul className="flex flex-col gap-6">
-              {CONTACT_DETAILS.map((detail) => (
+              {contactDetails.map((detail) => (
                 <li key={detail.label} className="flex items-start gap-4">
                   <span className="mt-0.5 flex items-center justify-center w-9 h-9 rounded-full bg-terracotta/10 text-terracotta-hover shrink-0">
                     <detail.icon className="w-4 h-4" />

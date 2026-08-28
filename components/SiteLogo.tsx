@@ -1,24 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  DEFAULT_SITE_SETTINGS,
-  cachedSettings,
-  subscribeSiteSettings,
-  type SiteSettings,
-} from "@/lib/siteSettings";
-
-/** Reads the configurable brand logo (settings/site), falling back to the
- *  built-in Cortex mark. Starts from the default (matches SSR), then swaps to
- *  the localStorage cache and the live value on mount. */
-function useSiteSettings(): SiteSettings {
-  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
-  useEffect(() => {
-    setSettings(cachedSettings());
-    return subscribeSiteSettings(setSettings);
-  }, []);
-  return settings;
-}
+import { useSiteSettings } from "@/lib/useSiteSettings";
+import type { SiteSettings } from "@/lib/siteSettings";
 
 interface SiteLogoProps {
   /** "overlay" = light type on a photo; "solid" = interior/footer. */
@@ -34,7 +17,7 @@ export default function SiteLogo({
   settings: override,
 }: SiteLogoProps) {
   const live = useSiteSettings();
-  const { logoUrl, logoText, logoFont, logoSize } = override ?? live;
+  const { logoType, logoImage, logoText, logoFont, logoSize } = override ?? live;
   const fontClass =
     logoFont === "serif"
       ? "font-serif"
@@ -55,11 +38,11 @@ export default function SiteLogo({
         ? "text-cream"
         : "text-foreground";
 
-  if (logoUrl) {
+  if (logoType === "image" && logoImage) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={logoUrl}
+        src={logoImage}
         alt={logoText || "Cortex"}
         style={{ height: Math.round(logoSize * 1.6) }}
         className={`w-auto object-contain ${className ?? ""}`}

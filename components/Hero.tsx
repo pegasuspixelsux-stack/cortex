@@ -5,8 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import Nav from "@/components/Nav";
+import { useSiteSettings } from "@/lib/useSiteSettings";
 
 export default function Hero() {
+  const { headingText, supportHeadingText } = useSiteSettings();
   return (
     <section className="relative w-full min-h-screen overflow-hidden bg-terracotta">
       {/* Background photo — aerial view of the José Ignacio lighthouse */}
@@ -42,16 +44,16 @@ export default function Hero() {
       {/* Main Content */}
       <div className="relative z-10 px-6 md:px-12 lg:px-16 pt-16 md:pt-24 lg:pt-32">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-end min-h-[60vh]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-24 items-center lg:items-end min-h-[68vh] lg:min-h-[60vh]">
             {/* Left Column - Title */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="pb-12 lg:pb-24"
+              className="lg:pb-24"
             >
               <h1 className="font-serif text-white text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light leading-[1.1] tracking-tight whitespace-pre-line">
-                {"Redefiniendo el espacio,\nelevando la experiencia\nen Punta del Este"}
+                {headingText}
               </h1>
             </motion.div>
 
@@ -63,9 +65,7 @@ export default function Hero() {
               className="pb-12 lg:pb-24 flex flex-col gap-8"
             >
               <p className="text-white/90 text-sm md:text-base leading-relaxed max-w-md">
-                Conectamos exclusividad, arquitectura de autor y oportunidades
-                únicas frente al mar en los destinos más codiciados de
-                Uruguay.
+                {supportHeadingText}
               </p>
 
               <motion.div

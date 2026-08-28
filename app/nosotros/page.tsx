@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Mail, Phone } from "lucide-react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import SiteText from "@/components/SiteText";
 import { TEAM } from "@/lib/team";
 
 export const metadata: Metadata = {
@@ -26,15 +27,10 @@ export default function NosotrosPage() {
             <h1 className="font-serif text-4xl md:text-5xl font-extralight leading-[1.15] tracking-tight text-foreground">
               Arquitectura, visión y exclusividad en la costa atlántica
             </h1>
-            <p className="text-foreground/60 text-base md:text-lg leading-relaxed">
-              Cortex nació de la convicción de que Punta del Este merece una
-              agencia a la altura de su arquitectura: discreta, analítica y
-              profundamente conocedora de cada rincón de la costa. Trabajamos
-              codo a codo con propietarios, inversores y estudios de
-              arquitectura para curar un portafolio donde cada propiedad
-              responde a un criterio de diseño, ubicación y proyección de
-              valor. No vendemos metros cuadrados — gestionamos patrimonio.
-            </p>
+            <SiteText
+              field="nosotrosText"
+              className="text-foreground/60 text-base md:text-lg leading-relaxed"
+            />
           </div>
 
           {/* Main photo block */}

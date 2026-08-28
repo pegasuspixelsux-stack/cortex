@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import SiteLogo from "@/components/SiteLogo";
 import {
@@ -8,6 +10,8 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { ZONES } from "@/lib/zones";
+import { useSiteSettings } from "@/lib/useSiteSettings";
+import { digits } from "@/lib/siteSettings";
 
 const QUICK_LINKS = [
   { label: "Propiedades", href: "/#propiedades" },
@@ -23,18 +27,18 @@ const LEGAL_LINKS = [
   { label: "Política de Cookies", href: "/cookies" },
 ];
 
-const SOCIALS = [
-  { label: "Instagram", href: "https://instagram.com", icon: Camera },
-  { label: "LinkedIn", href: "https://linkedin.com", icon: Briefcase },
-  { label: "YouTube", href: "https://youtube.com", icon: Video },
-  {
-    label: "WhatsApp",
-    href: "https://wa.me/59899000000",
-    icon: MessageCircle,
-  },
-];
-
 export default function Footer() {
+  const { phone, whatsapp, address, email } = useSiteSettings();
+  const socials = [
+    { label: "Instagram", href: "https://instagram.com", icon: Camera },
+    { label: "LinkedIn", href: "https://linkedin.com", icon: Briefcase },
+    { label: "YouTube", href: "https://youtube.com", icon: Video },
+    {
+      label: "WhatsApp",
+      href: `https://wa.me/${digits(whatsapp)}`,
+      icon: MessageCircle,
+    },
+  ];
   return (
     <footer className="w-full bg-navy">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 lg:px-16 pt-20 pb-12">
@@ -49,9 +53,7 @@ export default function Footer() {
               Agencia inmobiliaria de lujo especializada en propiedades de
               autor frente al mar en Punta del Este, Uruguay.
             </p>
-            <p className="text-cream-soft/60 text-xs">
-              Av. Roosevelt, Parada 5 · Punta del Este, Uruguay
-            </p>
+            <p className="text-cream-soft/60 text-xs">{address}</p>
           </div>
 
           {/* Enlaces rápidos */}
@@ -98,29 +100,29 @@ export default function Footer() {
               Contacto
             </h3>
             <ul className="flex flex-col gap-3 text-cream-soft text-sm">
-              <li>Av. Roosevelt, Parada 5, Punta del Este, Uruguay</li>
+              <li>{address}</li>
               <li>
                 <a
-                  href="mailto:contacto@cortexrealestate.com"
+                  href={`mailto:${email}`}
                   className="hover:text-terracotta-dark transition-colors"
                 >
-                  contacto@cortexrealestate.com
+                  {email}
                 </a>
               </li>
               <li>
                 <a
-                  href="tel:+59842000000"
+                  href={`tel:+${digits(phone)}`}
                   className="hover:text-terracotta-dark transition-colors"
                 >
-                  +598 42 00 0000
+                  {phone}
                 </a>
               </li>
               <li>
                 <a
-                  href="tel:+59899000000"
+                  href={`https://wa.me/${digits(whatsapp)}`}
                   className="hover:text-terracotta-dark transition-colors"
                 >
-                  +598 99 000 000 (WhatsApp)
+                  {whatsapp} (WhatsApp)
                 </a>
               </li>
             </ul>
@@ -148,7 +150,7 @@ export default function Footer() {
           </ul>
 
           <div className="flex items-center gap-5">
-            {SOCIALS.map((social) => (
+            {socials.map((social) => (
               <a
                 key={social.label}
                 href={social.href}

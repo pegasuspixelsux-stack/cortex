@@ -51,6 +51,7 @@ import {
 } from "@/remotion/constants";
 import { useAdminAuth } from "@/lib/admin/useAdminAuth";
 import { useFeatureFlags } from "@/lib/admin/featureFlags";
+import { useSiteSettings } from "@/lib/useSiteSettings";
 import ContentPresetPanel from "@/components/admin/ContentPresetPanel";
 import { applyConfig } from "@/lib/admin/contentPresets";
 
@@ -76,9 +77,31 @@ export default function AdminContentPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
+  const site = useSiteSettings();
+
   useEffect(() => {
     listProperties().then(setProperties).catch(() => setProperties([]));
   }, []);
+
+  // Seed the closing slide (contact line + agency logo) from global site
+  // settings, and keep it live until a property is chosen — after that the
+  // agent owns the styling.
+  useEffect(() => {
+    if (poolId) return;
+    setReel((r) => ({
+      ...r,
+      lines: r.lines.map((l) =>
+        l.id === "cta"
+          ? { ...l, text: `${site.logoText} · ${site.phone}`.trim() }
+          : l,
+      ),
+      logo: {
+        ...r.logo,
+        url: site.logoType === "image" ? site.logoImage : undefined,
+        text: site.logoType === "text" ? site.logoText : "",
+      },
+    }));
+  }, [site, poolId]);
 
   const ar = ASPECT_RATIOS[reel.aspectRatio];
   const photoCount = Math.min(reel.photos.length, MAX_REEL_PHOTOS);
