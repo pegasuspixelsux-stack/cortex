@@ -3,6 +3,8 @@
 // standalone and the API route can import the types cheaply.
 
 export const FPS = 30;
+/** A reel is always exactly this many photo slides + 1 branding outro. */
+export const MAX_REEL_PHOTOS = 4;
 /** Frames each photo stays on screen (3s). */
 export const SCENE_DURATION = 90;
 /** Frames of the closing contact card (4s). */

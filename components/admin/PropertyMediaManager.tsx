@@ -34,7 +34,7 @@ import {
 import { optimizeImage } from "@/utils/imageOptimizer";
 import { uploadImage, deleteImageByUrl } from "@/lib/admin/storage";
 
-export const MAX_PHOTOS = 10;
+export const MAX_PHOTOS = 12;
 
 type PhotoItem = {
   id: string;

@@ -19,6 +19,7 @@ import { none } from "@remotion/transitions/none";
 import {
   BRAND,
   CTA_DURATION,
+  MAX_REEL_PHOTOS,
   SCENE_DURATION,
   TRANSITION_DURATION,
   type LogoConfig,
@@ -350,9 +351,10 @@ function CtaScene({ reel }: { reel: PropertyReelProps }) {
 /* ------------------------------------------------------------------ */
 
 export function PropertyReelTemplate(props: PropertyReelProps) {
-  const photos = props.photos.filter(
-    (u) => typeof u === "string" && u.length > 0,
-  );
+  // Strict structure: at most 4 photo slides, then the branding outro (5).
+  const photos = props.photos
+    .filter((u) => typeof u === "string" && u.length > 0)
+    .slice(0, MAX_REEL_PHOTOS);
   const td = props.transition === "cut" ? 1 : TRANSITION_DURATION;
   const presentation = transitionPresentation(props.transition);
 

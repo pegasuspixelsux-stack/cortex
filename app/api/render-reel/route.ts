@@ -10,6 +10,7 @@ import {
   DEFAULT_REEL_PROPS,
   FONT_KEYS,
   LINE_IDS,
+  MAX_REEL_PHOTOS,
   REEL_CONTENT_TYPES,
   TRANSITIONS,
   type AnimKind,
@@ -91,7 +92,9 @@ function sanitize(raw: unknown): PropertyReelProps {
       ? (p.contentType as ReelContentType)
       : d.contentType,
     photos: Array.isArray(p.photos)
-      ? p.photos.filter((u): u is string => typeof u === "string").slice(0, 10)
+      ? p.photos
+          .filter((u): u is string => typeof u === "string")
+          .slice(0, MAX_REEL_PHOTOS)
       : [],
     transition: TRANSITIONS.includes(p.transition as TransitionKind)
       ? (p.transition as TransitionKind)

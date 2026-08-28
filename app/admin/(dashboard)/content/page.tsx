@@ -35,6 +35,7 @@ import {
   FPS,
   LINE_IDS,
   LINE_LABEL,
+  MAX_REEL_PHOTOS,
   REEL_CONTENT_TYPES,
   TRANSITIONS,
   TRANSITION_LABEL,
@@ -65,6 +66,7 @@ export default function AdminContentPage() {
   const { reelGenerator } = useFeatureFlags();
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [reel, setReel] = useState<PropertyReelProps>(DEFAULT_REEL_PROPS);
+  const [poolId, setPoolId] = useState<string | null>(null);
   const [rendering, setRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -79,10 +81,26 @@ export default function AdminContentPage() {
   }, []);
 
   const ar = ASPECT_RATIOS[reel.aspectRatio];
+  const photoCount = Math.min(reel.photos.length, MAX_REEL_PHOTOS);
   const durationInFrames = useMemo(
-    () => reelDuration(reel.photos.length, reel.transition),
-    [reel.photos.length, reel.transition],
+    () => reelDuration(photoCount, reel.transition),
+    [photoCount, reel.transition],
   );
+  const pool = useMemo(
+    () => properties.find((p) => p.id === poolId)?.images ?? [],
+    [properties, poolId],
+  );
+  const readyToRender = reel.photos.length === MAX_REEL_PHOTOS;
+
+  function togglePhoto(url: string) {
+    setReel((r) => {
+      if (r.photos.includes(url)) {
+        return { ...r, photos: r.photos.filter((u) => u !== url) };
+      }
+      if (r.photos.length >= MAX_REEL_PHOTOS) return r;
+      return { ...r, photos: [...r.photos, url] };
+    });
+  }
 
   /* --- mutations --- */
   function set<K extends keyof PropertyReelProps>(k: K, v: PropertyReelProps[K]) {
@@ -123,10 +141,13 @@ export default function AdminContentPage() {
         : custom,
       cta,
     };
+    setPoolId(id);
     setReel((r) => ({
       ...r,
       contentType: rental ? "Alquiler" : "Venta",
-      photos: (p.images ?? []).slice(0, 10),
+      // Pre-select the first 4 as a starting sequence; the agent can swap
+      // and reorder them below.
+      photos: (p.images ?? []).slice(0, MAX_REEL_PHOTOS),
       lines: r.lines.map((l) => ({ ...l, text: text[l.id] })),
     }));
   }
@@ -257,13 +278,55 @@ export default function AdminContentPage() {
             </Group>
           </div>
 
-          {/* photo strip */}
-          <Group label={`Secuencia (${reel.photos.length})`}>
-            {reel.photos.length === 0 ? (
+          {/* photo selection: pick exactly 4 from the property's uploads */}
+          <Group
+            label={`Fotos — elegí ${MAX_REEL_PHOTOS} (${reel.photos.length}/${MAX_REEL_PHOTOS})`}
+          >
+            {pool.length === 0 ? (
               <p className="text-sm text-foreground/40">
                 Elegí una propiedad para traer sus fotos.
               </p>
             ) : (
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                {pool.map((url) => {
+                  const seq = reel.photos.indexOf(url);
+                  const selected = seq !== -1;
+                  const full = reel.photos.length >= MAX_REEL_PHOTOS;
+                  return (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => togglePhoto(url)}
+                      disabled={!selected && full}
+                      className={`relative aspect-square overflow-hidden rounded-sm border-2 transition-colors ${
+                        selected
+                          ? "border-terracotta"
+                          : full
+                            ? "cursor-not-allowed border-transparent opacity-40"
+                            : "border-transparent hover:border-foreground/30"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                      {selected && (
+                        <span className="absolute left-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-terracotta text-[11px] font-medium text-white">
+                          {seq + 1}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </Group>
+
+          {/* sequence: reorder the chosen 4 */}
+          {reel.photos.length > 0 && (
+            <Group label="Secuencia del reel">
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -287,8 +350,12 @@ export default function AdminContentPage() {
                   </div>
                 </SortableContext>
               </DndContext>
-            )}
-          </Group>
+              <p className="mt-1 text-[11px] text-foreground/40">
+                Slides 1–{MAX_REEL_PHOTOS} + slide final de marca ={" "}
+                {MAX_REEL_PHOTOS + 1} en total. Arrastrá para reordenar.
+              </p>
+            </Group>
+          )}
         </div>
 
         {/* --- editor panel --- */}
@@ -572,9 +639,15 @@ export default function AdminContentPage() {
 
           {error && <p className="text-danger text-sm">{error}</p>}
 
+          {!readyToRender && (
+            <p className="text-[11px] text-foreground/45">
+              Elegí exactamente {MAX_REEL_PHOTOS} fotos para poder exportar.
+            </p>
+          )}
+
           <button
             onClick={exportMp4}
-            disabled={rendering || reel.photos.length === 0}
+            disabled={rendering || !readyToRender}
             className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-terracotta px-5 py-3 text-sm text-white transition-colors hover:bg-terracotta-hover disabled:opacity-50"
           >
             {rendering ? (
