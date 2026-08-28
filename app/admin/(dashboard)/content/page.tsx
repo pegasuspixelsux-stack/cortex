@@ -18,7 +18,12 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Loader2, Download, GripVertical, Film, Upload } from "lucide-react";
-import { listProperties, type AdminProperty } from "@/lib/admin/properties";
+import {
+  listProperties,
+  formatSpecsLine,
+  formatOperationLine,
+  type AdminProperty,
+} from "@/lib/admin/properties";
 import { uploadImage } from "@/lib/admin/storage";
 import { PropertyReelTemplate } from "@/remotion/PropertyReelTemplate";
 import "@/remotion/fonts";
@@ -109,6 +114,8 @@ export default function AdminContentPage() {
       price: rental
         ? `USD ${priceFmt.format(p.price)}${terms.includes("Por Mes") || terms.includes("Alquiler Anual") ? " / período" : ""}`
         : `USD ${priceFmt.format(p.price)}`,
+      specs: formatSpecsLine(p),
+      operation: formatOperationLine(p),
       custom: rental && !custom
         ? terms.length > 1
           ? "Consulte precios por quincena"
@@ -327,6 +334,12 @@ export default function AdminContentPage() {
             const l = reel.lines.find((x) => x.id === id)!;
             return (
               <Section key={id} title={LINE_LABEL[id]} defaultOpen={id === "title"}>
+                {(id === "specs" || id === "operation") && (
+                  <p className="text-[11px] text-foreground/40">
+                    Se completa sola al elegir una propiedad. Podés editar el
+                    texto acá si querés.
+                  </p>
+                )}
                 <input
                   value={l.text}
                   onChange={(e) => setLine(id, { text: e.target.value })}

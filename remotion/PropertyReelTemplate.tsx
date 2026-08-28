@@ -286,10 +286,12 @@ function PhotoScene({
   url,
   index,
   reel,
+  isLast,
 }: {
   url: string;
   index: number;
   reel: PropertyReelProps;
+  isLast: boolean;
 }) {
   const frame = useCurrentFrame();
   const t = frame / SCENE_DURATION;
@@ -298,6 +300,14 @@ function PhotoScene({
     ? interpolate(t, [0, 1], [1.06, 1.18])
     : interpolate(t, [0, 1], [1.18, 1.06]);
   const drift = interpolate(t, [0, 1], [0, zoomIn ? -24 : 24]);
+
+  // On the final photo the property text must be fully gone before the
+  // branding outro begins — pull its exit window in ahead of the
+  // transition handoff so nothing bleeds onto the closing slide.
+  const td = reel.transition === "cut" ? 1 : TRANSITION_DURATION;
+  const textDuration = isLast
+    ? Math.max(36, SCENE_DURATION - td - 6)
+    : SCENE_DURATION;
 
   return (
     <AbsoluteFill style={{ backgroundColor: BRAND.ink, overflow: "hidden" }}>
@@ -311,7 +321,7 @@ function PhotoScene({
       {reel.lines
         .filter((l) => l.id !== "cta")
         .map((l) => (
-          <Line key={l.id} line={l} sceneDuration={SCENE_DURATION} />
+          <Line key={l.id} line={l} sceneDuration={textDuration} />
         ))}
 
       <LogoLayer logo={reel.logo} sceneDuration={SCENE_DURATION} />
@@ -319,17 +329,17 @@ function PhotoScene({
   );
 }
 
+/** Closing slide — branding only: the logo + the contact / CTA line.
+ *  No title, price, specs, operation or custom text ever renders here. */
 function CtaScene({ reel }: { reel: PropertyReelProps }) {
-  const shown = reel.lines.filter(
-    (l) => l.id === "title" || l.id === "cta" || l.id === "custom",
-  );
+  const cta = reel.lines.find((l) => l.id === "cta");
   return (
     <AbsoluteFill style={{ backgroundColor: BRAND.ink }}>
       <OverlayBand overlay={reel.topOverlay} edge="top" />
       <OverlayBand overlay={reel.bottomOverlay} edge="bottom" />
-      {shown.map((l) => (
-        <Line key={l.id} line={l} sceneDuration={CTA_DURATION} />
-      ))}
+      {cta && cta.text.trim() && (
+        <Line line={cta} sceneDuration={CTA_DURATION} />
+      )}
       <LogoLayer logo={reel.logo} sceneDuration={CTA_DURATION} />
     </AbsoluteFill>
   );
@@ -361,7 +371,12 @@ export function PropertyReelTemplate(props: PropertyReelProps) {
               key={`s${i}`}
               durationInFrames={SCENE_DURATION}
             >
-              <PhotoScene url={url} index={i} reel={props} />
+              <PhotoScene
+                url={url}
+                index={i}
+                reel={props}
+                isLast={i === photos.length - 1}
+              />
             </TransitionSeries.Sequence>
           );
           if (i === 0) return [seq];

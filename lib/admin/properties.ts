@@ -59,6 +59,8 @@ export interface AdminProperty {
   rentalTerms: RentalTerm[];
   sqm: number;
   beds: number;
+  /** Optional — older listings don't store it; estimateBaths() fills in. */
+  baths?: number;
   images: string[];
   agentName?: string;
   status: AdminPropertyStatus;
@@ -108,4 +110,38 @@ export async function updateProperty(
 
 export async function deleteProperty(id: string): Promise<void> {
   await deleteDoc(doc(requireDb(), COLLECTION, id));
+}
+
+/* ---- reel text helpers -------------------------------------------------- */
+// Used by the content generator to auto-fill the "specs" and "operation"
+// text lines from a selected property. Kept here so the formatting lives
+// next to the data model.
+
+/** Bathroom count: the stored value, or the same estimate the public site
+ *  uses (lib/properties.ts:getPropertyBaths) when none was entered. */
+export function estimateBaths(p: Pick<AdminProperty, "beds" | "baths">): number {
+  if (typeof p.baths === "number" && p.baths > 0) return p.baths;
+  return p.beds > 0 ? Math.max(1, Math.round(p.beds * 0.75)) : 0;
+}
+
+/** e.g. "3 Dormitorios | 2 Baños | 120 m²" (skips any zero part). */
+export function formatSpecsLine(
+  p: Pick<AdminProperty, "beds" | "baths" | "sqm">,
+): string {
+  const baths = estimateBaths(p);
+  const parts: string[] = [];
+  if (p.beds > 0)
+    parts.push(`${p.beds} ${p.beds === 1 ? "Dormitorio" : "Dormitorios"}`);
+  if (baths > 0) parts.push(`${baths} ${baths === 1 ? "Baño" : "Baños"}`);
+  if (p.sqm > 0) parts.push(`${p.sqm.toLocaleString("es-UY")} m²`);
+  return parts.join("  |  ");
+}
+
+/** e.g. "Venta" or "Alquiler • 1era Quincena de Enero". */
+export function formatOperationLine(
+  p: Pick<AdminProperty, "operation" | "rentalTerms">,
+): string {
+  if (p.operation !== "Alquiler") return "Venta";
+  const terms = p.rentalTerms ?? [];
+  return terms.length ? `Alquiler • ${terms.join(" / ")}` : "Alquiler";
 }

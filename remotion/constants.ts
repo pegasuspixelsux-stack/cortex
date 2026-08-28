@@ -65,12 +65,29 @@ export interface FilmBurnConfig {
 export type ReelContentType = "Venta" | "Alquiler";
 export const REEL_CONTENT_TYPES: ReelContentType[] = ["Venta", "Alquiler"];
 
-export type LineId = "zone" | "title" | "price" | "custom" | "cta";
-export const LINE_IDS: LineId[] = ["zone", "title", "price", "custom", "cta"];
+export type LineId =
+  | "zone"
+  | "title"
+  | "price"
+  | "specs"
+  | "operation"
+  | "custom"
+  | "cta";
+export const LINE_IDS: LineId[] = [
+  "zone",
+  "title",
+  "price",
+  "specs",
+  "operation",
+  "custom",
+  "cta",
+];
 export const LINE_LABEL: Record<LineId, string> = {
   zone: "Zona",
   title: "Título",
   price: "Precio",
+  specs: "Ficha técnica (auto)",
+  operation: "Operación (auto)",
   custom: "Línea personalizada",
   cta: "CTA / Contacto",
 };
@@ -149,10 +166,12 @@ const line = (over: Partial<TextLine> & Pick<TextLine, "id" | "text">): TextLine
 });
 
 export const DEFAULT_LINES: TextLine[] = [
-  line({ id: "zone", text: "José Ignacio, Punta del Este", fontSize: 26, y: 60 }),
-  line({ id: "title", text: "Residencia Océano", fontSize: 62, y: 66 }),
-  line({ id: "price", text: "USD 3.200.000", fontSize: 32, y: 80 }),
-  line({ id: "custom", text: "", fontSize: 24, y: 88, color: "rgba(255,255,255,0.9)" }),
+  line({ id: "zone", text: "José Ignacio, Punta del Este", fontSize: 26, y: 54 }),
+  line({ id: "title", text: "Residencia Océano", fontSize: 62, y: 60 }),
+  line({ id: "price", text: "USD 3.200.000", fontSize: 32, y: 74 }),
+  line({ id: "specs", text: "3 Dormitorios | 2 Baños | 120 m²", fontSize: 22, y: 80, color: "rgba(255,255,255,0.9)" }),
+  line({ id: "operation", text: "Venta", fontSize: 20, y: 85, color: "rgba(255,255,255,0.85)" }),
+  line({ id: "custom", text: "", fontSize: 24, y: 90, color: "rgba(255,255,255,0.9)" }),
   line({ id: "cta", text: "Cortex Real Estate · +598 99 000 000", fontSize: 24, x: 50, y: 66, align: "center" }),
 ];
 

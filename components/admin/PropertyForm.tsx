@@ -38,6 +38,7 @@ export default function PropertyForm({
   const [type, setType] = useState(initialValues?.type ?? PROPERTY_TYPES[0]);
   const [sqm, setSqm] = useState(String(initialValues?.sqm ?? ""));
   const [beds, setBeds] = useState(String(initialValues?.beds ?? ""));
+  const [baths, setBaths] = useState(String(initialValues?.baths ?? ""));
   const [images, setImages] = useState<string[]>(initialValues?.images ?? []);
   const [description, setDescription] = useState(
     initialValues?.description ?? "",
@@ -75,6 +76,7 @@ export default function PropertyForm({
       rentalTerms: operation === "Alquiler" ? rentalTerms : [],
       sqm: Number(sqm) || 0,
       beds: Number(beds) || 0,
+      baths: Number(baths) || 0,
       images,
       description,
       status,
@@ -190,7 +192,7 @@ export default function PropertyForm({
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
         <Field label="Metros cuadrados">
           <input
             required
@@ -209,6 +211,16 @@ export default function PropertyForm({
             value={beds}
             onChange={(e) => setBeds(e.target.value)}
             placeholder="4"
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Baños">
+          <input
+            type="number"
+            min={0}
+            value={baths}
+            onChange={(e) => setBaths(e.target.value)}
+            placeholder="3"
             className={inputClass}
           />
         </Field>

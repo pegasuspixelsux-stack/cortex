@@ -78,6 +78,7 @@ service cloud.firestore {
         && (!('rentalTerms' in data) || data.rentalTerms is list)
         && data.sqm is number
         && data.beds is number
+        && (!('baths' in data) || data.baths is number)
         && data.images is list
         && data.status in ['Publicada', 'Borrador'];
     }
