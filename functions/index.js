@@ -6,7 +6,9 @@ const { getStorage } = require("firebase-admin/storage");
 const sharp = require("sharp");
 
 initializeApp();
-setGlobalOptions({ region: "us-central1", maxInstances: 10 });
+// Must match the Storage bucket's region (cortex-b882e is us-east1) — a
+// function can only listen to a bucket in its own region.
+setGlobalOptions({ region: "us-east1", maxInstances: 10 });
 
 // --- Watermark configuration ----------------------------------------------
 const WATERMARK_TEXT = "CORTEX";
