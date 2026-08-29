@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import ProtectedImage from "@/components/ProtectedImage";
 import {
   BedDouble,
   Bath,
@@ -115,7 +115,7 @@ export default function PropertyDetail({ id }: { id: string }) {
           {/* Editorial gallery */}
           <div className="grid grid-cols-1 lg:grid-cols-4 lg:grid-rows-2 gap-3 lg:h-[560px] mb-16">
             <div className="relative w-full aspect-[4/3] lg:aspect-auto overflow-hidden rounded-sm lg:col-span-2 lg:row-span-2">
-              <Image
+              <ProtectedImage
                 src={gallery[0]}
                 alt={property.title}
                 fill
@@ -133,7 +133,7 @@ export default function PropertyDetail({ id }: { id: string }) {
                     : "aspect-square lg:aspect-auto lg:col-span-1 lg:row-span-1"
                 }`}
               >
-                <Image
+                <ProtectedImage
                   src={gallery[i % gallery.length]}
                   alt={`${property.title} — foto ${i + 1}`}
                   fill

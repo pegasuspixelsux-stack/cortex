@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import ProtectedImage from "@/components/ProtectedImage";
 import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import type { Development } from "@/lib/developments";
@@ -53,7 +53,7 @@ export default function DevelopmentsSection({
             className="group flex flex-col gap-4"
           >
             <div className="relative w-full aspect-[4/5] overflow-hidden rounded-sm">
-              <Image
+              <ProtectedImage
                 src={dev.image}
                 alt={dev.name}
                 fill

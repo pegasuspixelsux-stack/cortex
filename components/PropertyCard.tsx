@@ -1,4 +1,4 @@
-import Image from "next/image";
+import ProtectedImage from "@/components/ProtectedImage";
 import { ArrowUpRight, BedDouble, Ruler } from "lucide-react";
 import {
   coverImage,
@@ -11,7 +11,7 @@ export default function PropertyCard({ property }: { property: PublicProperty })
   return (
     <a href={`/propiedades/${property.id}`} className="block group">
       <div className="relative w-full aspect-[4/5] overflow-hidden rounded-sm border border-foreground/10">
-        <Image
+        <ProtectedImage
           src={coverImage(property)}
           alt={`${property.title}, ${property.zone}`}
           fill
