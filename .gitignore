@@ -45,3 +45,8 @@ next-env.d.ts
 
 # remotion build output
 .remotion-bundle
+
+# firebase
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
