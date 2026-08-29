@@ -1,72 +1,64 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
+const { onObjectFinalized } = require("firebase-functions/v2/storage");
+const { setGlobalOptions } = require("firebase-functions/v2");
+const logger = require("firebase-functions/logger");
+const { initializeApp } = require("firebase-admin/app");
+const { getStorage } = require("firebase-admin/storage");
 const sharp = require("sharp");
-const path = require("path");
-const os = require("os");
-const fs = require("fs");
 
-admin.initializeApp();
+initializeApp();
+setGlobalOptions({ region: "us-central1", maxInstances: 10 });
 
-// --- Watermark configuration ------------------------------------------------
+// --- Watermark configuration ----------------------------------------------
 const WATERMARK_TEXT = "CORTEX";
 const WATERMARK_COLOR = "rgba(255, 255, 255, 0.6)"; // white, 60% opacity
 const FONT_SIZE_RATIO = 0.05; // watermark height ≈ 5% of the image height
 
 // Only these Storage prefixes get watermarked. `brand/` is excluded on
-// purpose — that folder holds the site logo. Add prefixes here to widen.
+// purpose — that folder holds the site logo. Add prefixes to widen.
 const WATERMARK_PREFIXES = ["properties/"];
 
-// Custom-metadata flag written on the output so re-processing the same file
-// (the upload below re-triggers onFinalize) is a no-op instead of a loop.
+// Custom-metadata flag written on the output so the re-upload below (which
+// re-triggers this function) is a no-op instead of an infinite loop.
 const DONE_FLAG = "cortexWatermarked";
 
 /**
- * Storage onFinalize trigger: stamps a centered semi-transparent "CORTEX"
- * text watermark onto uploaded property images, overwriting the original
- * in place so the existing download URL keeps working.
+ * Storage onObjectFinalized (2nd gen): stamps a centered semi-transparent
+ * "CORTEX" wordmark onto uploaded property images, overwriting the
+ * original in place so the existing download URL keeps working.
  */
-exports.applyWatermark = functions
-  .runWith({ memory: "512MB", timeoutSeconds: 120 })
-  .storage.object()
-  .onFinalize(async (object) => {
+exports.applyWatermark = onObjectFinalized(
+  { memory: "1GiB", timeoutSeconds: 120 },
+  async (event) => {
+    const object = event.data;
     const filePath = object.name;
     const contentType = object.contentType || "";
 
     if (!filePath || !contentType.startsWith("image/")) {
-      console.log("Skipping — not an image:", filePath);
-      return null;
+      logger.debug("Skip — not an image", { filePath });
+      return;
     }
-
-    // Already watermarked by a previous run of this function.
     if (object.metadata && object.metadata[DONE_FLAG] === "true") {
-      console.log("Skipping — already watermarked:", filePath);
-      return null;
+      logger.debug("Skip — already watermarked", { filePath });
+      return;
     }
-
-    // Scope: only the configured folders.
     if (!WATERMARK_PREFIXES.some((p) => filePath.startsWith(p))) {
-      console.log("Skipping — outside watermark scope:", filePath);
-      return null;
+      logger.debug("Skip — outside watermark scope", { filePath });
+      return;
     }
 
-    const bucket = admin.storage().bucket(object.bucket);
-    const baseName = path.basename(filePath);
-    const tempOriginal = path.join(os.tmpdir(), baseName);
-    const tempOutput = path.join(os.tmpdir(), `wm_${baseName}`);
+    const file = getStorage().bucket(object.bucket).file(filePath);
 
     try {
-      await bucket.file(filePath).download({ destination: tempOriginal });
-
-      const { width, height } = await sharp(tempOriginal).metadata();
+      const [buffer] = await file.download();
+      const { width, height } = await sharp(buffer).metadata();
       if (!width || !height) {
-        console.warn("Skipping — could not read image size:", filePath);
-        return null;
+        logger.warn("Skip — unreadable image size", { filePath });
+        return;
       }
 
       const fontSize = Math.max(20, Math.floor(height * FONT_SIZE_RATIO));
       const letterSpacing = Math.round(fontSize * 0.18);
-
-      const svgOverlay = Buffer.from(`
+      const svg = Buffer.from(`
         <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
           <style>
             .wm {
@@ -80,13 +72,13 @@ exports.applyWatermark = functions
         </svg>
       `);
 
-      await sharp(tempOriginal)
-        .rotate() // respect EXIF orientation before compositing
-        .composite([{ input: svgOverlay, top: 0, left: 0, blend: "over" }])
-        .toFile(tempOutput);
+      const out = await sharp(buffer)
+        .rotate() // honour EXIF orientation before compositing
+        .composite([{ input: svg, top: 0, left: 0, blend: "over" }])
+        .toBuffer();
 
-      await bucket.upload(tempOutput, {
-        destination: filePath,
+      await file.save(out, {
+        resumable: false,
         metadata: {
           contentType,
           cacheControl: "public, max-age=31536000",
@@ -94,14 +86,9 @@ exports.applyWatermark = functions
         },
       });
 
-      console.log(`Watermarked ${filePath}`);
-    } catch (error) {
-      console.error("Error applying watermark to", filePath, error);
-    } finally {
-      for (const f of [tempOriginal, tempOutput]) {
-        if (fs.existsSync(f)) fs.unlinkSync(f);
-      }
+      logger.info("Watermarked", { filePath });
+    } catch (err) {
+      logger.error("Watermark failed", { filePath, err: String(err) });
     }
-
-    return null;
-  });
+  },
+);

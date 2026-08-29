@@ -76,34 +76,72 @@ export default function PropertyCsvImport({
     if (fileInput.current) fileInput.current.value = "";
   }
 
-  function handleFile(file: File) {
+  /** Feed parsed headers + rows through the shared validation pipeline. */
+  function ingest(headers: string[], rawRows: Record<string, unknown>[]) {
+    const cleanHeaders = headers.map((h) => String(h ?? "").trim()).filter(Boolean);
+    if (cleanHeaders.length === 0) {
+      setParseError(
+        "No se detectaron columnas. ¿La primera fila tiene los encabezados?",
+      );
+      return;
+    }
+    const hr = resolveHeaders(cleanHeaders);
+    const rows = rawRows.filter((r) =>
+      Object.values(r).some((v) => String(v ?? "").trim() !== ""),
+    );
+    const parsed = rows.map((raw, i) =>
+      validateRow(normalizeRow(raw, hr), i + 2),
+    );
+    setHeaderRes(hr);
+    setResults(parsed);
+    setStage("review");
+  }
+
+  async function handleFile(file: File) {
     setParseError(null);
-    if (!/\.csv$/i.test(file.name)) {
-      setParseError("El archivo debe ser .csv");
+    const isExcel = /\.xlsx?$/i.test(file.name);
+    const isCsv = /\.csv$/i.test(file.name);
+    if (!isCsv && !isExcel) {
+      setParseError("El archivo debe ser .csv, .xlsx o .xls");
       return;
     }
     setFileName(file.name);
+
+    if (isExcel) {
+      try {
+        const XLSX = await import("xlsx");
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        if (!sheet) {
+          setParseError("El archivo no tiene hojas.");
+          return;
+        }
+        const aoa = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+          header: 1,
+          blankrows: false,
+          defval: "",
+        });
+        const headers = (aoa[0] ?? []).map((h) => String(h));
+        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+          defval: "",
+          raw: false,
+          blankrows: false,
+        });
+        ingest(headers, rows);
+      } catch (err) {
+        setParseError(
+          err instanceof Error ? err.message : "No se pudo leer el Excel.",
+        );
+      }
+      return;
+    }
+
     Papa.parse<Record<string, unknown>>(file, {
       header: true,
       skipEmptyLines: "greedy",
       transformHeader: (h) => h.trim(),
-      complete: (res) => {
-        const headers = res.meta.fields ?? [];
-        if (headers.length === 0) {
-          setParseError("No se detectaron columnas. ¿El CSV tiene fila de encabezados?");
-          return;
-        }
-        const hr = resolveHeaders(headers);
-        const rows = (res.data as Record<string, unknown>[]).filter((r) =>
-          Object.values(r).some((v) => String(v ?? "").trim() !== ""),
-        );
-        const parsed = rows.map((raw, i) =>
-          validateRow(normalizeRow(raw, hr), i + 2),
-        );
-        setHeaderRes(hr);
-        setResults(parsed);
-        setStage("review");
-      },
+      complete: (res) => ingest(res.meta.fields ?? [], res.data),
       error: (err) => setParseError(err.message),
     });
   }
@@ -159,8 +197,9 @@ export default function PropertyCsvImport({
         >
           <Upload className="h-7 w-7 text-foreground/40" />
           <p className="text-sm text-foreground/70">
-            Arrastrá un archivo <span className="font-medium">.csv</span> o hacé
-            clic para elegirlo
+            Arrastrá un archivo{" "}
+            <span className="font-medium">.csv, .xlsx o .xls</span> o hacé clic
+            para elegirlo
           </p>
           <p className="text-xs text-foreground/40">
             Columnas: {CSV_TEMPLATE_HEADERS.join(", ")}
@@ -168,7 +207,7 @@ export default function PropertyCsvImport({
           <input
             ref={fileInput}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];

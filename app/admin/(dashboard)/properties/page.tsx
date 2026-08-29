@@ -95,7 +95,7 @@ export default function AdminPropertiesPage() {
             className="inline-flex items-center gap-2 border border-foreground/15 hover:border-terracotta text-foreground/70 text-sm px-4 py-2.5 rounded-full transition-colors w-fit"
           >
             <Upload className="w-4 h-4" />
-            Importar CSV
+            Importar CSV/Excel
           </button>
           <Link
             href="/admin/properties/new"
@@ -118,7 +118,7 @@ export default function AdminPropertiesPage() {
           >
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-xl font-light text-foreground">
-                Importar propiedades desde CSV
+                Importar propiedades desde CSV o Excel
               </h2>
               <button
                 onClick={() => setImportOpen(false)}
