@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search, Upload, X } from "lucide-react";
 import {
   listProperties,
   deleteProperty,
   type AdminProperty,
   type AdminPropertyStatus,
 } from "@/lib/admin/properties";
+import PropertyCsvImport from "@/components/admin/PropertyCsvImport";
 
 const STATUS_FILTERS: Array<AdminPropertyStatus | "Todas"> = [
   "Todas",
@@ -38,6 +39,7 @@ export default function AdminPropertiesPage() {
   const [statusFilter, setStatusFilter] =
     useState<(typeof STATUS_FILTERS)[number]>("Todas");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -87,14 +89,49 @@ export default function AdminPropertiesPage() {
             {properties.length} propiedades en Firestore
           </p>
         </div>
-        <Link
-          href="/admin/properties/new"
-          className="inline-flex items-center gap-2 bg-terracotta hover:bg-terracotta-hover text-white text-sm px-5 py-2.5 rounded-full transition-colors w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Propiedad
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-2 border border-foreground/15 hover:border-terracotta text-foreground/70 text-sm px-4 py-2.5 rounded-full transition-colors w-fit"
+          >
+            <Upload className="w-4 h-4" />
+            Importar CSV
+          </button>
+          <Link
+            href="/admin/properties/new"
+            className="inline-flex items-center gap-2 bg-terracotta hover:bg-terracotta-hover text-white text-sm px-5 py-2.5 rounded-full transition-colors w-fit"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Propiedad
+          </Link>
+        </div>
       </div>
+
+      {importOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/70 backdrop-blur-sm px-4 py-10"
+          onClick={() => setImportOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-sm bg-background p-6 md:p-8 flex flex-col gap-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-xl font-light text-foreground">
+                Importar propiedades desde CSV
+              </h2>
+              <button
+                onClick={() => setImportOpen(false)}
+                className="text-foreground/40 hover:text-foreground"
+                aria-label="Cerrar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <PropertyCsvImport onImported={load} />
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
